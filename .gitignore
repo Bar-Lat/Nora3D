@@ -1,0 +1,17 @@
+# Visual Studio tymczasowe
+.vs/
+x64/
+Debug/
+Release/
+*.user
+*.suo
+
+# Qt tymczasowe
+*.vcxproj.user
+/x64
+/Debug
+/Release
+GeneratedFiles/
+ui_*.h
+moc_*.cpp
+qrc_*.cpp
