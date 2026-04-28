@@ -1,15 +1,73 @@
-##  Nora3d (projekt zaliczeniowy z Zaawansowanego Programowania w C++ na 4. semestrze)
-Projekt stanowi rozwinięcie aplikacji stworzonej podczas 3. semestru studiów. 
+# Nora3D
 
-### Co było wykonane:
-Dwuwymiarowa przestrzeń: Symulacja automatu komórkowego oparta na płaskiej siatce (2D).
-Przetwarzanie sekwencyjne: Logika obliczeń wykonywana w jednym wątku, co ograniczało wydajność przy duzych planszach.
-Prosty zapis danych: Przechowywanie stanów symulacji oraz konfiguracji w podstawowych plikach txt.
-Grafika rastrowa: Podstawowa wizualizacja stanów komórek bez zaawansowanych efektów graficznych.
+Projekt zaliczeniowy z przedmiotu Zaawansowane Programowanie w C++ (4. semestr).
 
-### Obecny cel
-Przejście na 3D: Rozszerzenie logiki automatu o trzeci wymiar (sześcian komórek).
-Wielowątkowość: Zastosowanie modułu Qt Concurrent do równoległego przeliczania stanów komórek, co pozwali na polepszenie wydajności.
-Relacyjna baza danych: Zastąpienie plików tekstowych bazą SQLite (Qt SQL), umożliwiającą wydajne zarządzanie historią symulacji i zaawansowane filtrowanie statystyk.
-Moduł Analityczny: Wyliczanie w czasie rzeczywistym parametrów takich jak średnia i maksymalna liczba zarażeń, mediana czasu trwania epidemii oraz odchylenie standardowe stanów populacji.  
-Dynamiczne wykresy: Wizualizacja statystyk bezpośrednio w interfejsie graficznym Qt.
+##  Opis projektu
+
+Nora3D to aplikacja symulująca automat komórkowy w przestrzeni trójwymiarowej. Projekt stanowi rozwinięcie wcześniejszej wersji 2D i skupia się na poprawie wydajności, wizualizacji oraz analizie danych.
+
+---
+
+## Najważniejsze funkcjonalności
+
+### Symulacja 3D
+
+* Automat komórkowy działający na trójwymiarowej siatce
+* Możliwość konfiguracji parametrów symulacji
+
+### Wydajność
+
+* Równoległe przetwarzanie przy użyciu Qt Concurrent
+* Lepsza skalowalność dla dużych przestrzeni
+
+### Baza danych
+
+* Zapis wyników symulacji do SQLite (Qt SQL)
+* Przechowywanie historii i parametrów
+* Możliwość filtrowania i analizy danych
+
+### Analiza danych
+
+* Obliczanie statystyk w czasie rzeczywistym:
+
+  * średnia liczba zarażeń
+  * maksymalna liczba zarażeń
+  * mediana czasu trwania
+  * odchylenie standardowe
+
+### Wizualizacja
+
+* Dynamiczne wykresy w interfejsie Qt
+* Wizualizacja przestrzeni 3D
+
+---
+
+## Rozwój projektu (2D -> 3D)
+
+### Poprzednia wersja
+
+* Automat 2D (płaska siatka)
+* Obliczenia sekwencyjne (1 wątek)
+* Zapis do plików tekstowych
+* Prosta grafika rastrowa
+
+### Obecna wersja
+
+* Przestrzeń 3D
+* Wielowątkowość (Qt Concurrent)
+* Baza danych SQLite
+* Rozbudowana analiza i wizualizacja
+
+---
+
+## Technologie
+
+* C++
+* Qt (Core, GUI, Widgets, 3D, SQL, Concurrent)
+* SQLite
+
+---
+
+##  Status
+
+Projekt w trakcie rozwoju
