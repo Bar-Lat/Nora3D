@@ -12,12 +12,13 @@ void SimulationCore::reset(int size)
     maxInfectedCount = 0;
 
     // inicjalizacja siatki obecnej i buforu stanem Healthy
-    cells.assign(gridSize, std::vector<CellState>(gridSize, CellState::Healthy));
-    nextCells.assign(gridSize, std::vector<CellState>(gridSize, CellState::Healthy));
+    int totalCells = gridSize * gridSize * gridSize;
+    cells.assign(totalCells, CellState::Healthy);
+    nextCells.assign(totalCells, CellState::Healthy);
 
 	// inicjalizacja czasu i buforu timerów zerami
-    timers.assign(gridSize, std::vector<int>(gridSize, 0));
-    nextTimers.assign(gridSize, std::vector<int>(gridSize, 0));
+    timers.assign(totalCells, 0);
+    nextTimers.assign(totalCells, 0);
 }
 
 void SimulationCore::setParams(int infDuration, int immDuration, int infChance)
@@ -35,22 +36,22 @@ void SimulationCore::setParams(int infDuration, int immDuration, int infChance)
 // ====================================================================
 
 // pobranie stanu komórki
-CellState SimulationCore::getCellState(int r, int c) const
+CellState SimulationCore::getCellState(int x, int y, int z) const
 {
-    if (r >= 0 && r < gridSize && c >= 0 && c < gridSize) {
-        return cells[r][c];
+    if (x >= 0 && x < gridSize && y >= 0 && y < gridSize && z >= 0 && z < gridSize) {
+        return cells[getIndex(x,y,z,gridSize)];
     }
     // Domyślnie zwraca Healthy poza granicami
     return CellState::Healthy;
 }
 
 // ustawienie stanu komórki
-void SimulationCore::setCellState(int r, int c, CellState state)
+void SimulationCore::setCellState(int x, int y, int z, CellState state)
 {
-    if (r >= 0 && r < gridSize && c >= 0 && c < gridSize) {
+    if (x >= 0 && x < gridSize && y >= 0 && y < gridSize && z >= 0 && z < gridSize) {
         // Ustawienie stanu i timera
-        cells[r][c] = state;
-        timers[r][c] = (state == CellState::Infected) ? 1 : 0;
+        cells[getIndex(x, y, z, gridSize)] = state;
+        timers[getIndex(x, y, z, gridSize)] = (state == CellState::Infected) ? 1 : 0;
     }
 }
 
@@ -67,59 +68,62 @@ void SimulationCore::step()
 	// iteracja po wszystkich komórkach siatki i zapis do bufora
     for (int i = 0; i < gridSize; ++i) {
         for (int j = 0; j < gridSize; ++j) {
+            for (int k = 0;k < gridSize; ++k) {
 
-            CellState currentState = cells[i][j];
-            CellState newState = currentState;
-            int newTimer = timers[i][j];
+                int xyz = getIndex(i, j, k, gridSize);
+                CellState currentState = cells [xyz];
+                CellState newState = currentState;
+                int newTimer = timers[xyz];
 
-            switch (currentState) {
-                // zdrowa -> zarażona
-            case CellState::Healthy:
-            {
-                int infectedCount = countInfectedNeighbors(i, j);
-                if (infectedCount > 0) {
-                    bool getsInfected = false;
+                switch (currentState) {
+                    // zdrowa -> zarażona
+                case CellState::Healthy:
+                {
+                    int infectedCount = countInfectedNeighbors(i, j, k);
+                    if (infectedCount > 0) {
+                        bool getsInfected = false;
 
-                    // szansa zarażenia zależna od zarażonych sąsiadów
-                    for (int k = 0; k < infectedCount; ++k) {
-                        if (rng->bounded(100) < infectionChance) {
-                            getsInfected = true;
-                            break;
+                        // szansa zarażenia zależna od zarażonych sąsiadów
+                        for (int l = 0; l < infectedCount; ++l) {
+                            if (rng->bounded(100) < infectionChance) {
+                                getsInfected = true;
+                                break;
+                            }
+                        }
+                        // zmiana stanu i start licznika
+                        if (getsInfected) {
+                            newState = CellState::Infected;
+                            newTimer = 1;
                         }
                     }
-					// zmiana stanu i start licznika
-                    if (getsInfected) {
-                        newState = CellState::Infected;
-                        newTimer = 1; 
+                    break;
+                }
+                // zarażona -> odporna
+                case CellState::Infected:
+                {
+                    newTimer++;
+                    if (newTimer > infectionDuration) {
+                        newState = CellState::Immune;
+                        newTimer = 1;
                     }
+                    break;
                 }
-                break;
-            }
-            // zarażona -> odporna
-            case CellState::Infected:
-            {
-                newTimer++;
-                if (newTimer > infectionDuration) {
-                    newState = CellState::Immune;
-                    newTimer = 1; 
+                // odporna -> zdrowa
+                case CellState::Immune:
+                {
+                    newTimer++;
+                    if (newTimer > immunityDuration) {
+                        newState = CellState::Healthy;
+                        newTimer = 0;
+                    }
+                    break;
                 }
-                break;
-            }
-			// odporna -> zdrowa
-            case CellState::Immune:
-            {
-                newTimer++;
-                if (newTimer > immunityDuration) {
-                    newState = CellState::Healthy;
-                    newTimer = 0;
                 }
-                break;
-            }
-            }
 
-            // zapis do bufora
-            nextCells[i][j] = newState;
-            nextTimers[i][j] = newTimer;
+                // zapis do bufora
+                nextCells[xyz] = newState;
+                nextTimers[xyz] = newTimer;
+            }
         }
     }
 
@@ -143,22 +147,29 @@ void SimulationCore::step()
 // ====================================================================
 
 // zliczanie zarazonych wokol komorki
-int SimulationCore::countInfectedNeighbors(int r, int c) const
+int SimulationCore::countInfectedNeighbors(int x, int y, int z) const
 {
     int count = 0;
 
-	// otoczenie 3x3 z pominięciem srodka
-    for (int dr = -1; dr <= 1; ++dr) {
-        int nr = r + dr;
-		if (nr < 0 || nr >= gridSize) continue; // wyłączenie granic wierszy 
+    // Przeszukujemy sześcian wokół komórki
+    for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dz = -1; dz <= 1; ++dz) {
 
-        for (int dc = -1; dc <= 1; ++dc) {
-            if (dr == 0 && dc == 0) continue; // wylaczenie srodka
+                if (dx == 0 && dy == 0 && dz == 0) continue; // Pomijamy samą siebie
 
-            int nc = c + dc;
-			if (nc >= 0 && nc < gridSize) { // wyłączenie granic kolumn
-                if (cells[nr][nc] == CellState::Infected) {
-                    count++;
+                int nx = x + dx;
+                int ny = y + dy;
+                int nz = z + dz;
+
+                // Sprawdzamy granice (gridSize pochodzi z klasy)[cite: 3]
+                if (nx >= 0 && nx < gridSize &&
+                    ny >= 0 && ny < gridSize &&
+                    nz >= 0 && nz < gridSize)
+                {
+                    if (cells[getIndex(nx, ny, nz, gridSize)] == CellState::Infected) {
+                        count++;
+                    }
                 }
             }
         }
@@ -173,20 +184,10 @@ std::tuple<int, int, int> SimulationCore::getCellCounts() const
     int infected = 0;
     int immune = 0;
 
-    for (int i = 0; i < gridSize; ++i) {
-        for (int j = 0; j < gridSize; ++j) {
-            switch (cells[i][j]) {
-            case CellState::Healthy:
-                healthy++;
-                break;
-            case CellState::Infected:
-                infected++;
-                break;
-            case CellState::Immune:
-                immune++;
-                break;
-            }
-        }
+    for (const auto& state : cells) {
+        if (state == CellState::Healthy) healthy++;
+        else if (state == CellState::Infected) infected++;
+        else if (state == CellState::Immune) immune++;
     }
     return std::make_tuple(healthy, infected, immune);
 }

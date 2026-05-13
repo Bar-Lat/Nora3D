@@ -30,19 +30,15 @@ private:
     BoardCanvas* boardCanvas;
     QTimer* timer;
 
-	// historia wyników symulacji
-    QVector<std::tuple<int, double, int, int, int, int, int>> simulationHistory;
-
 private slots:
 	// sloty (reakcje na zdarzenia)
     void onStartStopClicked();
     void onResetClicked();
     void onSizeChange();
     void onTick();
-    void onSaveClicked();
     void updateSliderLabels(int value);
-    void handleCellClick(int row, int col);
-    void onScaleChanged(int newScale);
+    void handleCellClick(int x, int y, int z);
+
 
 private:
 	// metody pomocnicze

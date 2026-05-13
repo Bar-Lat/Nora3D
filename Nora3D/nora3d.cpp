@@ -32,20 +32,15 @@ nora3d::nora3d(QWidget* parent)
     ui->chanceInfection->setRange(0, 100);
     ui->chanceInfection->setValue(50);
 
-    ui->scaleSpinBox->setRange(1, 20);
-    ui->scaleSpinBox->setValue(10); 
-
     // polaczenia sygnal slot
     connect(ui->startStopButton, &QPushButton::clicked, this, &nora3d::onStartStopClicked);
     connect(ui->resetButton, &QPushButton::clicked, this, &nora3d::onResetClicked);
-    connect(ui->saveButton, &QPushButton::clicked, this, &nora3d::onSaveClicked);
 
     connect(ui->gameTime, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->timeInfection, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->timeImmune, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->chanceInfection, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
 
-    connect(ui->scaleSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &nora3d::onScaleChanged);
     connect(ui->boardSize, QOverload<int>::of(&QSpinBox::valueChanged), this, &nora3d::onSizeChange);
 
     connect(timer, &QTimer::timeout, this, &nora3d::onTick);
@@ -141,12 +136,6 @@ void nora3d::onTick()
             int immDuration = simulation->getImmunityDuration();
             int infChance = simulation->getInfectionChance();
 
-            // Zapis do historii
-            simulationHistory.append({
-                timeCycles, timeSeconds, maxInfected,
-                size, infDuration, immDuration, infChance
-                });
-
             // koniec i odświeżenie
             onStartStopClicked();
             updateUI();
@@ -180,18 +169,6 @@ void nora3d::updateUI()
     ui->InfectedCellsLabel->setText(QString("%1").arg(infectedCount));
     ui->ImmuneCellsLabel->setText(QString("%1").arg(immuneCount));
 
-    // update historii symulacji
-    QString lastTimesText = "Ostatnie symulacje:\n";
-    int maxEntries = 10;
-
-    for (int i = simulationHistory.size() - 1; i >= 0 && (simulationHistory.size() - 1 - i) < maxEntries; --i) {
-        const auto& entry = simulationHistory.at(i);
-        lastTimesText += QString("  - %1 cykli (%2 s)\n")
-            .arg(std::get<0>(entry))
-            .arg(std::get<1>(entry), 0, 'f', 2);
-    }
-    ui->LastTimesLabel->setText(lastTimesText);
-
     // odświeżenie planszy
     boardCanvas->setGrid(simulation->grid());
 }
@@ -217,104 +194,18 @@ void nora3d::updateSliderLabels(int value)
     updateUI();
 }
 
-void nora3d::handleCellClick(int row, int col)
+void nora3d::handleCellClick(int x, int y, int z)
 {
 	// handler klikniecia komórki
-        CellState currentState = simulation->getCellState(row, col);
+        CellState currentState = simulation->getCellState(x,y,z);
 
         if (currentState == CellState::Healthy) {
             // zdrowa -> zarażona
-            simulation->setCellState(row, col, CellState::Infected);
+            simulation->setCellState(x, y, z, CellState::Infected);
         }
         else{
             // zarażona / odporna -> zdrowa
-            simulation->setCellState(row, col, CellState::Healthy);
+            simulation->setCellState(x, y, z, CellState::Healthy);
         }
         updateUI();
     }
-
-// skalowanie widoku planszy
-void nora3d::onScaleChanged(int newScale)
-{
-    boardCanvas->setScaleFactor(newScale);
-    updateUI();
-}
-
-// ====================================================================
-// ZAPIS 
-// ====================================================================
-
-void nora3d::onSaveClicked()
-{
-    // okno dialogowe zapisu
-    QString fileName = QFileDialog::getSaveFileName(this,
-        tr("Zapisz Historię Symulacji"),
-        "histora_symulacji.txt",
-        tr("Plik tekstowy (*.txt)"));
-
-    if (fileName.isEmpty())
-        return;
-
-    QFile file(fileName);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&file);
-
-		// stałe szerokości kolumn
-        const int W1_NR = 4;
-        const int W2_SIZE = 12;
-        const int W3_TINF = 12;
-        const int W4_TIMM = 12;
-        const int W5_CHANCE = 14;
-        const int W6_CYCLES = 10;
-        const int W7_TIME = 10;
-        const int W8_MAXINF = 14;
-
-        // nagłówek i separator
-        out << QString("%1 | %2 | %3 | %4 | %5 | %6 | %7 | %8\n")
-            .arg("Nr.", W1_NR)
-            .arg("Rozmiar", W2_SIZE)
-            .arg("Czas zaraz.", W3_TINF)
-            .arg("Czas odporn.", W4_TIMM)
-            .arg("Szansa zaraz.", W5_CHANCE)
-            .arg("Cykle", W6_CYCLES)
-            .arg("Czas (s)", W7_TIME)
-            .arg("Max Zarazonych", W8_MAXINF);
-
-        out << QString("").fill('-', W1_NR) << " | "
-            << QString("").fill('-', W2_SIZE) << " | "
-            << QString("").fill('-', W3_TINF) << " | "
-            << QString("").fill('-', W4_TIMM) << " | "
-            << QString("").fill('-', W5_CHANCE) << " | "
-            << QString("").fill('-', W6_CYCLES) << " | "
-            << QString("").fill('-', W7_TIME) << " | "
-            << QString("").fill('-', W8_MAXINF) << "\n";
-
-		// dane symulacji
-        for (int i = 0; i < simulationHistory.size(); ++i) {
-            const auto& entry = simulationHistory.at(i);
-
-            out << QString("%1 | %2 | %3 | %4 | %5 | %6 | %7 | %8\n")
-                // Nr.
-                .arg(i + 1, W1_NR)
-                // Rozmiar
-                .arg(QString("%1x%1").arg(std::get<3>(entry)), W2_SIZE)
-                // Czas zarazenia
-                .arg(std::get<4>(entry), W3_TINF)
-                // Czas odpornosci
-                .arg(std::get<5>(entry), W4_TIMM)
-                // Szansa na zarazenie
-                .arg(QString("%1%").arg(std::get<6>(entry)), W5_CHANCE)
-                // Cykle
-                .arg(std::get<0>(entry), W6_CYCLES)
-                // Czas (s)
-                .arg(QString::number(std::get<1>(entry), 'f', 2), W7_TIME)
-                // Max zarazonych
-                .arg(std::get<2>(entry), W8_MAXINF);
-        }
-
-        file.close();
-    }
-    else {
-        QMessageBox::critical(this, tr("Błąd Zapisu"), tr("Nie można otworzyć pliku do zapisu."));
-    }
-}

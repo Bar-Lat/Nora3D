@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<UI version="4.0" >
+<ui version="4.0">
  <class>Nora3DClass</class>
- <widget class="QMainWindow" name="Nora3DClass" >
-<property name="geometry">
+ <widget class="QMainWindow" name="Nora3DClass">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>722</width>
-    <height>789</height>
+    <width>857</width>
+    <height>793</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QFrame" name="Labels">
+     <widget class="QWidget" name="topWidget" native="true">
       <property name="maximumSize">
        <size>
         <width>16777215</width>
@@ -29,39 +29,73 @@
       <property name="autoFillBackground">
        <bool>true</bool>
       </property>
-      <property name="frameShape">
-       <enum>QFrame::Shape::Panel</enum>
-      </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QPushButton" name="startStopButton">
-         <property name="text">
-          <string>Start</string>
+        <widget class="QFrame" name="frame_4">
+         <property name="autoFillBackground">
+          <bool>true</bool>
          </property>
+         <property name="frameShape">
+          <enum>QFrame::Shape::Panel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Plain</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_12">
+          <item>
+           <widget class="QPushButton" name="startStopButton">
+            <property name="text">
+             <string>Start</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="resetButton">
+            <property name="text">
+             <string>Reset</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="resetButton">
-         <property name="text">
-          <string>Reset</string>
+        <widget class="QFrame" name="frame_5">
+         <property name="autoFillBackground">
+          <bool>true</bool>
          </property>
+         <property name="frameShape">
+          <enum>QFrame::Shape::Panel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Plain</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_13">
+          <item>
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Długość ściany NxNxN</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="boardSize">
+            <property name="minimum">
+             <number>5</number>
+            </property>
+            <property name="maximum">
+             <number>50</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
-        <widget class="QSpinBox" name="boardSize">
-         <property name="minimum">
-          <number>5</number>
-         </property>
-         <property name="maximum">
-          <number>50</number>
-         </property>
-         <property name="value">
-          <number>15</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QFrame" name="frame_6">
+        <widget class="QFrame" name="frame_7">
          <property name="autoFillBackground">
           <bool>true</bool>
          </property>
@@ -102,13 +136,16 @@
      </widget>
     </item>
     <item>
-     <widget class="QWidget" name="widget" native="true">
+     <widget class="QWidget" name="bottomWidget" native="true">
+      <property name="autoFillBackground">
+       <bool>true</bool>
+      </property>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="QWidget" name="settings_widget" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>30</horstretch>
+           <horstretch>25</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
@@ -158,10 +195,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QSlider" name="gameTime">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
+              <widget class="QWidget" name="widget" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
+                <item>
+                 <widget class="QSlider" name="gameTime">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>
@@ -209,10 +252,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QSlider" name="timeImmune">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
+              <widget class="QWidget" name="widget_7" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_9">
+                <item>
+                 <widget class="QSlider" name="timeImmune">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>
@@ -260,10 +309,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QSlider" name="timeInfection">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
+              <widget class="QWidget" name="widget_8" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_10">
+                <item>
+                 <widget class="QSlider" name="timeInfection">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>
@@ -311,10 +366,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QSlider" name="chanceInfection">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
+              <widget class="QWidget" name="widget_9" native="true">
+               <layout class="QHBoxLayout" name="horizontalLayout_11">
+                <item>
+                 <widget class="QSlider" name="chanceInfection">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>
@@ -325,6 +386,12 @@
        </item>
        <item>
         <widget class="QWidget" name="statsWidget" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>25</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
            <widget class="QFrame" name="frame">
@@ -493,103 +560,36 @@
             </layout>
            </widget>
           </item>
-          <item>
-           <widget class="QFrame" name="frame_6">
-            <property name="autoFillBackground">
-             <bool>true</bool>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::Shape::Panel</enum>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_14">
-             <item>
-              <widget class="QLabel" name="label_4">
-               <property name="font">
-                <font>
-                 <pointsize>10</pointsize>
-                 <bold>true</bold>
-                </font>
-               </property>
-               <property name="text">
-                <string>Skalowanie planszy</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="scaleSpinBox">
-               <property name="value">
-                <number>5</number>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QFrame" name="LastTimesWidget">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>40</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>200</height>
-             </size>
-            </property>
-            <property name="autoFillBackground">
-             <bool>true</bool>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::Shape::Panel</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Shadow::Plain</enum>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_12">
-             <item>
-              <widget class="QPushButton" name="saveButton">
-               <property name="text">
-                <string>Zapisz do pliku</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QWidget" name="LastTimes" native="true">
-               <layout class="QVBoxLayout" name="verticalLayout_13">
-                <item>
-                 <widget class="QLabel" name="LastTimesLabel">
-                  <property name="text">
-                   <string>TextLabel</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
          </layout>
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="boardWidget">
+        <widget class="QWidget" name="widget_6" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>50</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="autoFillBackground">
-          <bool>true</bool>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::Shape::Panel</enum>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_2"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QFrame" name="boardWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>50</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="autoFillBackground">
+             <bool>true</bool>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::Panel</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_2"/>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>
@@ -603,4 +603,4 @@
   <include location="nora3d.qrc"/>
  </resources>
  <connections/>
-</UI>
+</ui>
