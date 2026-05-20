@@ -38,7 +38,7 @@ private slots:
     void onTick();
     void updateSliderLabels(int value);
     void handleCellClick(int x, int y, int z);
-
+    void onRandomDeathToggled(bool checked);
 
 private:
 	// metody pomocnicze

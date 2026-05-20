@@ -29,11 +29,12 @@ public:
 
     // settery
         void setCellState(int x, int y, int z, CellState state);       // ustawienie stanu komorki
-        void setParams(int infDuration, int immDuration, int infChance, int dNumber); // ustawienie danych zasad
+        void setParams(int infDuration, int immDuration, int infChance, int dmax, int dmin); // ustawienie danych zasad
 
 private:
     std::vector<int> infectionCounters;
     std::vector<int> nextInfectionCounters; 
+    std::vector<int> individualDeathThresholds; 
     // podstawowe dane
     int gridSize = 0;
     int currentTime = 0;
@@ -49,6 +50,8 @@ private:
     int immunityDuration = 4;
     int infectionChance = 50;
     int deathNumber = 5;
+    int deathMin = 1;
+    int deathMax = 1;
 
 	// maksymalna liczba zarażonych
     int maxInfectedCount = 0;

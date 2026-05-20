@@ -23,20 +23,29 @@ void SimulationCore::reset(int size)
     // inicjalizacja liczby zarażeń danej komorki i buforu zerami
     infectionCounters.assign(totalCells, 0);
     nextInfectionCounters.assign(totalCells, 0);
+    individualDeathThresholds.assign(totalCells, 0);
 }
 
-void SimulationCore::setParams(int infDuration, int immDuration, int infChance, int dNumber)
+void SimulationCore::setParams(int infDuration, int immDuration, int infChance, int dmin, int dmax)
 {
-    // minimalne wartosci
+    // minimalne wartosci dla czasu
     infectionDuration = std::max(1, infDuration);
     immunityDuration = std::max(1, immDuration);
 
     // ogranicznik szansy zarazenia
     infectionChance = std::clamp(infChance, 0, 100);
 
-    // ogranicznik smiercionosnego zarazenia
-    deathNumber = std::clamp(dNumber, 1, 100);
+    // Zabezpieczenie zakresu śmierci
+    // Upewniamy się, że dmin nie jest większe niż dmax
+    int minVal = std::clamp(dmin, 1, 100);
+    int maxVal = std::clamp(dmax, 1, 100);
 
+    if (minVal > maxVal) {
+        std::swap(minVal, maxVal);
+    }
+
+    deathMin = minVal;
+    deathMax = maxVal;
 }
 
 // ====================================================================
@@ -57,9 +66,20 @@ CellState SimulationCore::getCellState(int x, int y, int z) const
 void SimulationCore::setCellState(int x, int y, int z, CellState state)
 {
     if (x >= 0 && x < gridSize && y >= 0 && y < gridSize && z >= 0 && z < gridSize) {
-        // Ustawienie stanu i timera
-        cells[getIndex(x, y, z, gridSize)] = state;
-        timers[getIndex(x, y, z, gridSize)] = (state == CellState::Infected) ? 1 : 0;
+        int xyz = getIndex(x, y, z, gridSize);
+
+        cells[xyz] = state;
+        timers[xyz] = (state == CellState::Infected) ? 1 : 0;
+
+        if (state == CellState::Infected) {
+            infectionCounters[xyz] = 1;
+
+            individualDeathThresholds[xyz] = deathMin + QRandomGenerator::global()->bounded(deathMax - deathMin + 1);
+        }
+        else {
+            infectionCounters[xyz] = 0;
+            individualDeathThresholds[xyz] = 0;
+        }
     }
 }
 
@@ -80,16 +100,23 @@ void SimulationCore::step() {
                 CellState newState = currentState;
                 int newTimer = timers[xyz];
                 int newCounter = infectionCounters[xyz];
-
                 switch (currentState) {
                 case CellState::Healthy: {
                     int infectedCount = countInfectedNeighbors(i, j, k);
                     if (infectedCount > 0) {
+                        bool getsInfected = false;
                         for (int l = 0; l < infectedCount; ++l) {
                             if (rng->bounded(100) < infectionChance) {
-                                newState = CellState::Infected;
-                                newTimer = 1;
+                                getsInfected = true;
+                                break;
                             }
+                        }
+                        if (getsInfected) {
+                            newState = CellState::Infected;
+                            newTimer = 1;
+                            newCounter++; // Inkrementacja licznika przy zarażeniu
+                            // Losowanie indywidualnego progu śmierci dla tej komórki
+                            individualDeathThresholds[xyz] = deathMin + rng->bounded(deathMax - deathMin + 1);
                         }
                     }
                     break;
@@ -97,18 +124,13 @@ void SimulationCore::step() {
                 case CellState::Infected:
                 {
                     newTimer++;
-
-                    // Sprawdzamy czy czas infekcji minął
                     if (newTimer > infectionDuration) {
-                        newCounter++; // Zwiększamy licznik (komórka przeżyła pełny cykl infekcji)
-
-                        if (newCounter >= deathNumber) {
-                            // Umiera zamiast stać się odporną
+                        newCounter++; 
+                        if (newCounter >= individualDeathThresholds[xyz]) {
                             newState = CellState::Dead;
                             newTimer = 0;
                         }
                         else {
-                            // Standardowe przejście w odporność
                             newState = CellState::Immune;
                             newTimer = 1;
                         }
@@ -123,10 +145,8 @@ void SimulationCore::step() {
                     }
                     break;
                 }
-                case CellState::Dead: {
-                    // Komórka martwa nic nie robi
+                case CellState::Dead:
                     break;
-                }
                 }
 
                 nextCells[xyz] = newState;

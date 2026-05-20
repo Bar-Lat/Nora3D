@@ -38,6 +38,12 @@ nora3d::nora3d(QWidget* parent)
     ui->deathSlider->setRange(1, 100);
     ui->deathSlider->setValue(10);
 
+    ui->deathSliderMax->setRange(1, 100);
+    ui->deathSliderMax->setValue(5);
+
+    ui->deathSliderMin->setRange(1, 100);
+    ui->deathSliderMin->setValue(10);
+
 
     // polaczenia sygnal slot
     connect(ui->startStopButton, &QPushButton::clicked, this, &nora3d::onStartStopClicked);
@@ -52,7 +58,8 @@ nora3d::nora3d(QWidget* parent)
 
     connect(timer, &QTimer::timeout, this, &nora3d::onTick);
     connect(boardCanvas, &BoardCanvas::cellClicked, this, &nora3d::handleCellClick);
-
+    connect(ui->deathSliderMin, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
+    connect(ui->deathSliderMax, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->deathSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->spacingSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->spacingSlider, &QSlider::valueChanged,
@@ -60,6 +67,11 @@ nora3d::nora3d(QWidget* parent)
         {
             boardCanvas->setSpacing(value);
         });
+
+    // W konstruktorze nora3d
+    connect(ui->deadRandom, &QCheckBox::toggled, this, &nora3d::onRandomDeathToggled);
+
+
 
 	// etykiety suwaków
     double cps = (double)ui->gameTime->value();
@@ -71,6 +83,13 @@ nora3d::nora3d(QWidget* parent)
     ui->immuneSeconds->setText(QString::number(ui->timeImmune->value()) + " cykli");
     ui->infectionProbability->setText(QString::number(ui->chanceInfection->value()) + " %");
     ui->deathLabel->setText(QString::number(ui->deathSlider->value()));
+
+
+    ui->deathSliderMin->setVisible(0);
+    ui->deathSliderMax->setVisible(0);
+    ui->deathMinLabel->setVisible(0);
+    ui->deathMaxLabel->setVisible(0);
+
 
     onResetClicked();
 }
@@ -85,14 +104,38 @@ nora3d::~nora3d()
 // STEROWANIE I PARAMETRY
 // ====================================================================
 
-void nora3d::applySettings()
-{
-	// przekazanie wartości do modelu symulacji 
+void nora3d::onRandomDeathToggled(bool checked) {
+    // Ukrywamy/pokazujemy odpowiednie kontrolki
+    ui->deathSlider->setVisible(!checked);
+    ui->deathLabel->setVisible(!checked);
+
+    ui->deathSliderMin->setVisible(checked);
+    ui->deathSliderMax->setVisible(checked);
+    ui->deathMinLabel->setVisible(checked); 
+    ui->deathMaxLabel->setVisible(checked);
+
+    applySettings();
+}
+
+void nora3d::applySettings() {
+    int minVal, maxVal;
+
+    if (ui->deadRandom->isChecked()) {
+        minVal = ui->deathSliderMin->value();
+        maxVal = ui->deathSliderMax->value();
+    }
+    else {
+        // Jeśli nie jest losowe, to traktujemy min i max jako tę samą wartość (lub obsługujemy to w SimulationCore)
+        minVal = ui->deathSlider->value();
+        maxVal = ui->deathSlider->value();
+    }
+
     simulation->setParams(
         ui->timeInfection->value(),
         ui->timeImmune->value(),
         ui->chanceInfection->value(),
-        ui->deathSlider->value()
+        minVal,
+        maxVal // Musisz zaktualizować setParams w SimulationCore
     );
 }
 
@@ -208,6 +251,8 @@ void nora3d::updateSliderLabels(int value)
         else if (senderSlider == ui->timeInfection) { ui->InfectionSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->chanceInfection) { ui->infectionProbability->setText(QString::number(value) + " %"); }
         else if (senderSlider == ui->deathSlider) { ui->deathLabel->setText(QString::number(value)); }
+        else if (senderSlider == ui->deathSliderMin) { ui->deathMinLabel->setText("Od: " + QString::number(value)); }
+        else if (senderSlider == ui->deathSliderMax) { ui->deathMaxLabel->setText("Do: " + QString::number(value)); }
         else if (senderSlider == ui->spacingSlider) {
             ui->spacingLabel->setText(QString::number(value/10.0f));
             boardCanvas->update(); 
