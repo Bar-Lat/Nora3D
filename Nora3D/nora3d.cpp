@@ -32,6 +32,10 @@ nora3d::nora3d(QWidget* parent)
     ui->chanceInfection->setRange(0, 100);
     ui->chanceInfection->setValue(50);
 
+    ui->spacingSlider->setRange(1, 8);
+    ui->spacingSlider->setValue(1);
+
+
     // polaczenia sygnal slot
     connect(ui->startStopButton, &QPushButton::clicked, this, &nora3d::onStartStopClicked);
     connect(ui->resetButton, &QPushButton::clicked, this, &nora3d::onResetClicked);
@@ -45,6 +49,13 @@ nora3d::nora3d(QWidget* parent)
 
     connect(timer, &QTimer::timeout, this, &nora3d::onTick);
     connect(boardCanvas, &BoardCanvas::cellClicked, this, &nora3d::handleCellClick);
+
+    connect(ui->spacingSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
+    connect(ui->spacingSlider, &QSlider::valueChanged,
+        [this](int value)
+        {
+            boardCanvas->setSpacing(value);
+        });
 
 	// etykiety suwaków
     double cps = (double)ui->gameTime->value();
@@ -189,6 +200,7 @@ void nora3d::updateSliderLabels(int value)
         if (senderSlider == ui->timeImmune) { ui->immuneSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->timeInfection) { ui->InfectionSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->chanceInfection) { ui->infectionProbability->setText(QString::number(value) + " %"); }
+        else if (senderSlider == ui->spacingSlider) { ui->spacingLabel->setText(QString::number(value)); }
         applySettings();
     }
     updateUI();

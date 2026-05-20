@@ -25,6 +25,7 @@ public:
     void setGrid(const Grid3D& newGrid);
     void setScaleFactor(int factor);
     int scaleFactor() const { return m_scaleFactor; }
+    void setSpacing(float spacing);
 
 
 signals:
@@ -45,6 +46,7 @@ private:
     float m_zoom = 2.5f;
     float m_rotationX = 0.0f;
     float m_rotationY = 0.0f;
+    float m_spacing = 1.0f;
     QPoint m_lastMousePos;
 
     // Pomocnicze metody

@@ -2,7 +2,8 @@
 #include <QMouseEvent>
 #include <QVector3D>
 #include <cmath>
-#include <algorithm> // Dla std::min/max
+#include <algorithm> 
+#include "nora3d.h"
 
 // ====================================================================
 // KONSTRUKTOR I SHADERY
@@ -41,11 +42,10 @@ BoardCanvas::BoardCanvas(QWidget* parent)
     : QOpenGLWidget(parent)
     , m_scaleFactor(10)
     , m_zoom(5.0f)
-    , m_rotationX(-25.0f) // Lekki obrót początkowy, żeby widzieć 3D
+    , m_rotationX(-25.0f) 
     , m_rotationY(45.0f)
 {
     setMinimumSize(400, 400);
-    // Wymagane, aby mouseMoveEvent działał bez wciśniętego przycisku (opcjonalne)
     setMouseTracking(true);
 }
 
@@ -53,7 +53,6 @@ BoardCanvas::BoardCanvas(QWidget* parent)
 void BoardCanvas::setGrid(const Grid3D& newGrid) {
     grid = newGrid;
     if (!grid.empty()) {
-        // N = pierwiastek sześcienny z rozmiaru wektora
         gridSize = static_cast<int>(std::round(std::pow(grid.size(), 1.0 / 3.0)));
     }
     update();
@@ -69,11 +68,12 @@ void BoardCanvas::setScaleFactor(int factor) {
 // ====================================================================
 
 // Odstęp między środkami kostek
-static const float SPACING = 1.5f;
 
 QMatrix4x4 BoardCanvas::getViewMatrix() const {
+
+
     QMatrix4x4 view;
-    float center = (gridSize - 1) * SPACING / 2.0f;
+    float center = (gridSize - 1) * m_spacing / 2.0f;
     float distance = gridSize * m_zoom;
 
     // Kamera patrzy na środek
@@ -82,10 +82,10 @@ QMatrix4x4 BoardCanvas::getViewMatrix() const {
         QVector3D(0, 1, 0));
 
     // Obrót wokół środka
-    view.translate(center, center, 0);
+    view.translate(center, center, center);
     view.rotate(m_rotationX, 1, 0, 0);
     view.rotate(m_rotationY, 0, 1, 0);
-    view.translate(-center, -center, 0);
+    view.translate(-center, -center, -center);
 
     return view;
 }
@@ -137,15 +137,14 @@ void BoardCanvas::mousePressEvent(QMouseEvent* event) {
         float minDistance = std::numeric_limits<float>::max();
         int clickedX = -1, clickedY = -1, clickedZ = -1;
 
-        // Promień sześcianu (połowa boku). W vertices[] mamy od -0.5 do 0.5, więc bok = 1.0.
         const float r = 0.5f;
 
-        // Sprawdzenie przecięcia z każdym sześcianem (AABB)
+        // Sprawdzenie przecięcia z każdym sześcianem
         for (int x = 0; x < gridSize; ++x) {
             for (int y = 0; y < gridSize; ++y) {
                 for (int z = 0; z < gridSize; ++z) {
 
-                    QVector3D center(x * SPACING, y * SPACING, z * SPACING);
+                    QVector3D center(x * m_spacing, y * m_spacing, z * m_spacing);
                     QVector3D bMin = center - QVector3D(r, r, r);
                     QVector3D bMax = center + QVector3D(r, r, r);
 
@@ -209,6 +208,12 @@ void BoardCanvas::mousePressEvent(QMouseEvent* event) {
 // ====================================================================
 // RYSOWANIE 
 // ====================================================================
+
+void BoardCanvas::setSpacing(float spacing)
+{
+    m_spacing = spacing;
+    update();
+}
 
 void BoardCanvas::initializeGL() {
     initializeOpenGLFunctions();
@@ -323,7 +328,7 @@ void BoardCanvas::paintGL() {
         for (int y = 0; y < gridSize; ++y) {
             for (int z = 0; z < gridSize; ++z) {
                 CellState state = grid[getIndex(x, y, z, gridSize)];
-                program->setUniformValue("aOffset", QVector3D(x * SPACING, y * SPACING, z * SPACING));
+                program->setUniformValue("aOffset", QVector3D(x * m_spacing, y * m_spacing, z * m_spacing));
                 program->setUniformValue("aColor", QVector3D(getColor(state).redF(), getColor(state).greenF(), getColor(state).blueF()));
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
@@ -337,12 +342,12 @@ void BoardCanvas::paintGL() {
     // ==========================================================
     vaoLines.bind();
     program->setUniformValue("u_isOutline", true);
-    glLineWidth(2.0f);
+    glLineWidth(0.5f);
 
     for (int x = 0; x < gridSize; ++x) {
         for (int y = 0; y < gridSize; ++y) {
             for (int z = 0; z < gridSize; ++z) {
-                program->setUniformValue("aOffset", QVector3D(x * SPACING, y * SPACING, z * SPACING));
+                program->setUniformValue("aOffset", QVector3D(x * m_spacing, y * m_spacing, z * m_spacing));
                 // UWAGA: Rysujemy używając GL_LINES zdefiniowanych w buforze vboLines
                 glDrawArrays(GL_LINES, 0, 24);
             }
