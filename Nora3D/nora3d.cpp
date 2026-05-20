@@ -32,8 +32,8 @@ nora3d::nora3d(QWidget* parent)
     ui->chanceInfection->setRange(0, 100);
     ui->chanceInfection->setValue(50);
 
-    ui->spacingSlider->setRange(1, 8);
-    ui->spacingSlider->setValue(1);
+    ui->spacingSlider->setRange(10, 100);
+    ui->spacingSlider->setValue(10);
 
 
     // polaczenia sygnal slot
@@ -192,18 +192,22 @@ void nora3d::updateSliderLabels(int value)
     if (senderSlider == ui->gameTime) {
         double CPS = (double)value;
         ui->cyclesPerSecond->setText(QString::number(CPS, 'f', 1) + " cykli/s");
-        int interval = 1000 / value;
+        int interval = (value > 0) ? (1000 / value) : 1000;
         timer->setInterval(interval);
+        updateUI(); // Tutaj aktualizacja UI jest wskazana
     }
     else {
-		// aktualizacja etykiet suwaków
         if (senderSlider == ui->timeImmune) { ui->immuneSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->timeInfection) { ui->InfectionSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->chanceInfection) { ui->infectionProbability->setText(QString::number(value) + " %"); }
-        else if (senderSlider == ui->spacingSlider) { ui->spacingLabel->setText(QString::number(value)); }
+        else if (senderSlider == ui->spacingSlider) {
+            ui->spacingLabel->setText(QString::number(value/10.0f));
+            boardCanvas->update(); 
+            return; 
+        }
         applySettings();
+        updateUI();
     }
-    updateUI();
 }
 
 void nora3d::handleCellClick(int x, int y, int z)

@@ -1,68 +1,102 @@
-#pragma once
-#include "SimulationTypes.h"
-#include "SimulationCore.h"
-#include <QWidget>
-#include <QColor>
-#include <QMouseEvent>
-#include <QPainter>
-#include <algorithm>
-#include <QWheelEvent>
+#ifndef BOARDCANVAS_H
+#define BOARDCANVAS_H
+
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
+#include <QMatrix4x4>
+#include <QVector3D>
+#include <QColor>
+#include <QMouseEvent>
+#include <QWheelEvent>
+#include <QFuture>
+#include <QFutureWatcher>
+#include <QMutex>
+#include <vector>
+#include <limits>
+
+#include "SimulationTypes.h"  // <-- ZMIANA: użyj istniejącego pliku
+
+// Struktura dla instanced rendering
+struct InstanceData {
+    QVector3D offset;
+    QVector3D color;
+    float padding[2]; // Wyrównanie do 32 bajtów
+
+    InstanceData() : offset(), color(), padding{ 0.0f, 0.0f } {}
+};
 
 class BoardCanvas : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
 {
     Q_OBJECT
 
 public:
-	// konstruktor zabraniajacy niejawna konwersje typu
     explicit BoardCanvas(QWidget* parent = nullptr);
+    ~BoardCanvas() override;
 
-    // gettery i settery
     void setGrid(const Grid3D& newGrid);
     void setScaleFactor(int factor);
-    int scaleFactor() const { return m_scaleFactor; }
     void setSpacing(float spacing);
-
 
 signals:
     void cellClicked(int x, int y, int z);
 
 protected:
-	// obsługa malowania i kliniecia
-    void mousePressEvent(QMouseEvent* event) override;
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
-
-private:
-    Grid3D grid;
-    int m_scaleFactor = 1;
-    int gridSize = 0;
-
-    float m_zoom = 2.5f;
-    float m_rotationX = 0.0f;
-    float m_rotationY = 0.0f;
-    float m_spacing = 1.0f;
-    QPoint m_lastMousePos;
-
-    // Pomocnicze metody
-    QColor getColor(CellState state) const;
-    QPoint cellIndexFromPos(const QPoint& pos) const;
-
     void wheelEvent(QWheelEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
 
-    QOpenGLShaderProgram* program;
-    QOpenGLVertexArrayObject vao;
-    QOpenGLVertexArrayObject vaoLines;
-    QOpenGLBuffer vboLines;
-    QOpenGLBuffer vbo;
-    // Macierze widoku przesyłane do shaderów
-    QMatrix4x4 projection;
+private:
+    // Metody pomocnicze
     QMatrix4x4 getViewMatrix() const;
+    QColor getColor(CellState state) const;
+    void updateInstanceBuffer();
+    void prepareInstanceDataAsync();
+    bool isInFrustum(const QVector3D& center, const QMatrix4x4& mvp) const;
 
+    // Dane siatki
+    Grid3D grid;
+    int gridSize;
+    int m_scaleFactor;
+    float m_spacing;
+
+    // Kamera
+    float m_zoom;
+    float m_rotationX;
+    float m_rotationY;
+    QPoint m_lastMousePos;
+    QMatrix4x4 projection;
+
+    // OpenGL obiekty
+    QOpenGLShaderProgram* program;
+
+    // VAO/VBO dla geometrii bazowej (jeden sześcian)
+    QOpenGLVertexArrayObject vao;
+    QOpenGLBuffer vbo;
+    QOpenGLBuffer vboLines;
+
+    // VAO/VBO dla instanced rendering
+    QOpenGLVertexArrayObject vaoInstanced;
+    QOpenGLBuffer vboInstanced;
+
+    // VAO/VBO filled i lines
+    QOpenGLVertexArrayObject vaoFilled; 
+    QOpenGLVertexArrayObject vaoLines;
+
+    // Dane instancji
+    std::vector<InstanceData> instanceData;
+    std::vector<InstanceData> visibleInstances;
+    bool instanceBufferDirty;
+
+    // Wielowątkowość
+    QFuture<std::vector<InstanceData>> prepareFuture;
+    QFutureWatcher<std::vector<InstanceData>> prepareWatcher;
+    bool isPreparingData;
 };
+
+#endif // BOARDCANVAS_H
