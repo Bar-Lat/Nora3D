@@ -6,7 +6,8 @@
 enum class CellState : uint8_t {
     Healthy, 
     Infected,
-    Immune
+    Immune,
+    Dead
 };
 
 // typy danych w symulacji

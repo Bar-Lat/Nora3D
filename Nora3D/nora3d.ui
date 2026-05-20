@@ -262,6 +262,78 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
+           <widget class="QFrame" name="frame_6">
+            <property name="autoFillBackground">
+             <bool>true</bool>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::Panel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Plain</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_15">
+             <item>
+              <widget class="QWidget" name="widget_13" native="true">
+               <property name="autoFillBackground">
+                <bool>true</bool>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_15">
+                <item>
+                 <widget class="QLabel" name="label_6">
+                  <property name="maximumSize">
+                   <size>
+                    <width>12342345</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Po ilu zarażeniach komórka umiera</string>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item alignment="Qt::AlignmentFlag::AlignRight">
+                 <widget class="QLabel" name="deathLabel">
+                  <property name="font">
+                   <font>
+                    <pointsize>11</pointsize>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QWidget" name="widget_14" native="true">
+               <layout class="QVBoxLayout" name="verticalLayout_16">
+                <item>
+                 <widget class="QSlider" name="deathSlider">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
            <widget class="QFrame" name="gameTimeFrame">
             <property name="autoFillBackground">
              <bool>true</bool>
@@ -525,7 +597,7 @@
              <number>1</number>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_9">
-             <item alignment="Qt::AlignmentFlag::AlignTop">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop">
               <widget class="QLabel" name="label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -544,7 +616,7 @@
                </property>
               </widget>
              </item>
-             <item alignment="Qt::AlignmentFlag::AlignHCenter">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignBottom">
               <widget class="QLabel" name="HealthyCellsLabel">
                <property name="font">
                 <font>
@@ -583,7 +655,7 @@
              <enum>QFrame::Shadow::Plain</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_10">
-             <item alignment="Qt::AlignmentFlag::AlignTop">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop">
               <widget class="QLabel" name="label_3">
                <property name="font">
                 <font>
@@ -602,7 +674,7 @@
                </property>
               </widget>
              </item>
-             <item alignment="Qt::AlignmentFlag::AlignHCenter">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignBottom">
               <widget class="QLabel" name="InfectedCellsLabel">
                <property name="font">
                 <font>
@@ -636,7 +708,7 @@
              <enum>QFrame::Shadow::Plain</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_11">
-             <item alignment="Qt::AlignmentFlag::AlignTop">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop">
               <widget class="QLabel" name="label_2">
                <property name="font">
                 <font>
@@ -655,8 +727,55 @@
                </property>
               </widget>
              </item>
-             <item alignment="Qt::AlignmentFlag::AlignHCenter">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignBottom">
               <widget class="QLabel" name="ImmuneCellsLabel">
+               <property name="font">
+                <font>
+                 <pointsize>40</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_8">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>20</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="autoFillBackground">
+             <bool>true</bool>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::Panel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Plain</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_17">
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop">
+              <widget class="QLabel" name="label_8">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Martwe komórki:</string>
+               </property>
+              </widget>
+             </item>
+             <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignBottom">
+              <widget class="QLabel" name="deadCellsLabel">
                <property name="font">
                 <font>
                  <pointsize>40</pointsize>

@@ -35,6 +35,9 @@ nora3d::nora3d(QWidget* parent)
     ui->spacingSlider->setRange(10, 100);
     ui->spacingSlider->setValue(10);
 
+    ui->deathSlider->setRange(1, 100);
+    ui->deathSlider->setValue(10);
+
 
     // polaczenia sygnal slot
     connect(ui->startStopButton, &QPushButton::clicked, this, &nora3d::onStartStopClicked);
@@ -50,6 +53,7 @@ nora3d::nora3d(QWidget* parent)
     connect(timer, &QTimer::timeout, this, &nora3d::onTick);
     connect(boardCanvas, &BoardCanvas::cellClicked, this, &nora3d::handleCellClick);
 
+    connect(ui->deathSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->spacingSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->spacingSlider, &QSlider::valueChanged,
         [this](int value)
@@ -66,6 +70,7 @@ nora3d::nora3d(QWidget* parent)
     ui->InfectionSeconds->setText(QString::number(ui->timeInfection->value()) + " cykli");
     ui->immuneSeconds->setText(QString::number(ui->timeImmune->value()) + " cykli");
     ui->infectionProbability->setText(QString::number(ui->chanceInfection->value()) + " %");
+    ui->deathLabel->setText(QString::number(ui->deathSlider->value()));
 
     onResetClicked();
 }
@@ -86,7 +91,8 @@ void nora3d::applySettings()
     simulation->setParams(
         ui->timeInfection->value(),
         ui->timeImmune->value(),
-        ui->chanceInfection->value()
+        ui->chanceInfection->value(),
+        ui->deathSlider->value()
     );
 }
 
@@ -132,8 +138,8 @@ void nora3d::onTick()
     simulation->step();
 
 	// bieżacy stan komórek
-    int healthyCount, infectedCount, immuneCount;
-    std::tie(healthyCount, infectedCount, immuneCount) = simulation->getCellCounts();
+    int healthyCount, infectedCount, immuneCount, deadCount;
+    std::tie(healthyCount, infectedCount, immuneCount, deadCount) = simulation->getCellCounts();
 
 	// koniec gdy nie ma zarażonych ani odpornych
     if (infectedCount == 0 && immuneCount == 0) {
@@ -174,11 +180,12 @@ void nora3d::updateUI()
     ui->label_time->setText(QString("Czas: %1 s").arg(timeSeconds, 0, 'f', 2));
 
     // update danych komórek
-    int healthyCount, infectedCount, immuneCount;
-    std::tie(healthyCount, infectedCount, immuneCount) = simulation->getCellCounts();
+    int healthyCount, infectedCount, immuneCount, deadCount;
+    std::tie(healthyCount, infectedCount, immuneCount, deadCount) = simulation->getCellCounts();
     ui->HealthyCellsLabel->setText(QString("%1").arg(healthyCount));
     ui->InfectedCellsLabel->setText(QString("%1").arg(infectedCount));
     ui->ImmuneCellsLabel->setText(QString("%1").arg(immuneCount));
+    ui->deadCellsLabel->setText(QString("%1").arg(deadCount));
 
     // odświeżenie planszy
     boardCanvas->setGrid(simulation->grid());
@@ -194,12 +201,13 @@ void nora3d::updateSliderLabels(int value)
         ui->cyclesPerSecond->setText(QString::number(CPS, 'f', 1) + " cykli/s");
         int interval = (value > 0) ? (1000 / value) : 1000;
         timer->setInterval(interval);
-        updateUI(); // Tutaj aktualizacja UI jest wskazana
+        updateUI(); 
     }
     else {
         if (senderSlider == ui->timeImmune) { ui->immuneSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->timeInfection) { ui->InfectionSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->chanceInfection) { ui->infectionProbability->setText(QString::number(value) + " %"); }
+        else if (senderSlider == ui->deathSlider) { ui->deathLabel->setText(QString::number(value)); }
         else if (senderSlider == ui->spacingSlider) {
             ui->spacingLabel->setText(QString::number(value/10.0f));
             boardCanvas->update(); 

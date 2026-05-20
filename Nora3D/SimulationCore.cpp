@@ -19,9 +19,13 @@ void SimulationCore::reset(int size)
 	// inicjalizacja czasu i buforu timerów zerami
     timers.assign(totalCells, 0);
     nextTimers.assign(totalCells, 0);
+
+    // inicjalizacja liczby zarażeń danej komorki i buforu zerami
+    infectionCounters.assign(totalCells, 0);
+    nextInfectionCounters.assign(totalCells, 0);
 }
 
-void SimulationCore::setParams(int infDuration, int immDuration, int infChance)
+void SimulationCore::setParams(int infDuration, int immDuration, int infChance, int dNumber)
 {
     // minimalne wartosci
     infectionDuration = std::max(1, infDuration);
@@ -29,6 +33,10 @@ void SimulationCore::setParams(int infDuration, int immDuration, int infChance)
 
     // ogranicznik szansy zarazenia
     infectionChance = std::clamp(infChance, 0, 100);
+
+    // ogranicznik smiercionosnego zarazenia
+    deathNumber = std::clamp(dNumber, 1, 100);
+
 }
 
 // ====================================================================
@@ -60,57 +68,54 @@ void SimulationCore::setCellState(int x, int y, int z, CellState state)
 // ====================================================================
 
 // krok symulacji
-void SimulationCore::step()
-{
+void SimulationCore::step() {
     currentTime++;
     auto* rng = QRandomGenerator::global();
 
-	// iteracja po wszystkich komórkach siatki i zapis do bufora
     for (int i = 0; i < gridSize; ++i) {
         for (int j = 0; j < gridSize; ++j) {
-            for (int k = 0;k < gridSize; ++k) {
-
+            for (int k = 0; k < gridSize; ++k) {
                 int xyz = getIndex(i, j, k, gridSize);
-                CellState currentState = cells [xyz];
+                CellState currentState = cells[xyz];
                 CellState newState = currentState;
                 int newTimer = timers[xyz];
+                int newCounter = infectionCounters[xyz];
 
                 switch (currentState) {
-                    // zdrowa -> zarażona
-                case CellState::Healthy:
-                {
+                case CellState::Healthy: {
                     int infectedCount = countInfectedNeighbors(i, j, k);
                     if (infectedCount > 0) {
-                        bool getsInfected = false;
-
-                        // szansa zarażenia zależna od zarażonych sąsiadów
                         for (int l = 0; l < infectedCount; ++l) {
                             if (rng->bounded(100) < infectionChance) {
-                                getsInfected = true;
-                                break;
+                                newState = CellState::Infected;
+                                newTimer = 1;
                             }
                         }
-                        // zmiana stanu i start licznika
-                        if (getsInfected) {
-                            newState = CellState::Infected;
+                    }
+                    break;
+                }
+                case CellState::Infected:
+                {
+                    newTimer++;
+
+                    // Sprawdzamy czy czas infekcji minął
+                    if (newTimer > infectionDuration) {
+                        newCounter++; // Zwiększamy licznik (komórka przeżyła pełny cykl infekcji)
+
+                        if (newCounter >= deathNumber) {
+                            // Umiera zamiast stać się odporną
+                            newState = CellState::Dead;
+                            newTimer = 0;
+                        }
+                        else {
+                            // Standardowe przejście w odporność
+                            newState = CellState::Immune;
                             newTimer = 1;
                         }
                     }
                     break;
                 }
-                // zarażona -> odporna
-                case CellState::Infected:
-                {
-                    newTimer++;
-                    if (newTimer > infectionDuration) {
-                        newState = CellState::Immune;
-                        newTimer = 1;
-                    }
-                    break;
-                }
-                // odporna -> zdrowa
-                case CellState::Immune:
-                {
+                case CellState::Immune: {
                     newTimer++;
                     if (newTimer > immunityDuration) {
                         newState = CellState::Healthy;
@@ -118,28 +123,21 @@ void SimulationCore::step()
                     }
                     break;
                 }
+                case CellState::Dead: {
+                    // Komórka martwa nic nie robi
+                    break;
+                }
                 }
 
-                // zapis do bufora
                 nextCells[xyz] = newState;
                 nextTimers[xyz] = newTimer;
+                nextInfectionCounters[xyz] = newCounter;
             }
         }
     }
-
-	// zamiana buforów z aktualnymi danymi
     std::swap(cells, nextCells);
     std::swap(timers, nextTimers);
-
-	// zliczenie komórek w danym stanie
-    int healthy, infected, immune;
-    std::tie(healthy, infected, immune) = getCellCounts();
-
-	// maksymalna liczba zarażonych
-    int currentInfected = infected;
-    if (currentInfected > maxInfectedCount) {
-        maxInfectedCount = currentInfected;
-    }
+    std::swap(infectionCounters, nextInfectionCounters);
 }
 
 // ====================================================================
@@ -178,16 +176,18 @@ int SimulationCore::countInfectedNeighbors(int x, int y, int z) const
 }
 
 // zliczanie komórek w danym stanie
-std::tuple<int, int, int> SimulationCore::getCellCounts() const
+std::tuple<int, int, int, int> SimulationCore::getCellCounts() const
 {
     int healthy = 0;
     int infected = 0;
     int immune = 0;
+    int dead = 0;
 
     for (const auto& state : cells) {
         if (state == CellState::Healthy) healthy++;
         else if (state == CellState::Infected) infected++;
         else if (state == CellState::Immune) immune++;
+        else if (state == CellState::Dead) dead++;
     }
-    return std::make_tuple(healthy, infected, immune);
+    return std::make_tuple(healthy, infected, immune, dead);
 }
