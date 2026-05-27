@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1326</width>
-    <height>793</height>
+    <width>1210</width>
+    <height>996</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -277,17 +277,130 @@
               <widget class="QWidget" name="widget_15" native="true">
                <layout class="QVBoxLayout" name="verticalLayout_18">
                 <item>
+                 <widget class="QWidget" name="widget_16" native="true">
+                  <layout class="QHBoxLayout" name="horizontalLayout_18">
+                   <item>
+                    <widget class="QLabel" name="label_11">
+                     <property name="font">
+                      <font>
+                       <pointsize>11</pointsize>
+                       <bold>true</bold>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>Ilość sąsiadów</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLabel" name="filterLabel">
+                     <property name="font">
+                      <font>
+                       <pointsize>11</pointsize>
+                       <bold>true</bold>
+                      </font>
+                     </property>
+                     <property name="text">
+                      <string>TextLabel</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QFrame" name="frame_17">
+                  <property name="frameShape">
+                   <enum>QFrame::Shape::Panel</enum>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_16">
+                   <item>
+                    <widget class="QWidget" name="widget_17" native="true">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                       <horstretch>5</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_19">
+                      <item>
+                       <widget class="QSlider" name="filterSlider">
+                        <property name="orientation">
+                         <enum>Qt::Orientation::Horizontal</enum>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QFrame" name="frame_6">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                       <horstretch>1</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>100</height>
+                      </size>
+                     </property>
+                     <property name="frameShape">
+                      <enum>QFrame::Shape::Panel</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Shadow::Plain</enum>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_20">
+                      <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
+                       <widget class="QLabel" name="label_9">
+                        <property name="maximumSize">
+                         <size>
+                          <width>16777215</width>
+                          <height>70</height>
+                         </size>
+                        </property>
+                        <property name="text">
+                         <string>Włączyć filtr?</string>
+                        </property>
+                        <property name="alignment">
+                         <set>Qt::AlignmentFlag::AlignCenter</set>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                        <property name="textInteractionFlags">
+                         <set>Qt::TextInteractionFlag::NoTextInteraction</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
+                       <widget class="QCheckBox" name="filterCheckbox">
+                        <property name="text">
+                         <string/>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QWidget" name="widget_13" native="true">
                   <property name="autoFillBackground">
                    <bool>false</bool>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_15">
-                   <item>
+                   <item alignment="Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter">
                     <widget class="QLabel" name="label_6">
                      <property name="minimumSize">
                       <size>
                        <width>0</width>
-                       <height>100</height>
+                       <height>0</height>
                       </size>
                      </property>
                      <property name="maximumSize">
@@ -303,14 +416,14 @@
                       </font>
                      </property>
                      <property name="text">
-                      <string>Po ilu zarażeniach komórka umiera</string>
+                      <string>Ilość reinfekcji:</string>
                      </property>
                      <property name="wordWrap">
                       <bool>true</bool>
                      </property>
                     </widget>
                    </item>
-                   <item alignment="Qt::AlignmentFlag::AlignRight">
+                   <item alignment="Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter">
                     <widget class="QLabel" name="deathLabel">
                      <property name="font">
                       <font>
@@ -327,104 +440,125 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QWidget" name="widget_14" native="true">
-                  <layout class="QVBoxLayout" name="verticalLayout_16">
+                 <widget class="QFrame" name="frame_18">
+                  <property name="frameShape">
+                   <enum>QFrame::Shape::Panel</enum>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_17">
                    <item>
-                    <widget class="QSlider" name="deathSlider">
-                     <property name="orientation">
-                      <enum>Qt::Orientation::Horizontal</enum>
+                    <widget class="QWidget" name="widget_14" native="true">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                       <horstretch>5</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
                      </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_16">
+                      <item>
+                       <widget class="QSlider" name="deathSlider">
+                        <property name="orientation">
+                         <enum>Qt::Orientation::Horizontal</enum>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="deathMinLabel">
+                        <property name="font">
+                         <font>
+                          <bold>true</bold>
+                         </font>
+                        </property>
+                        <property name="text">
+                         <string>Od:</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QSlider" name="deathSliderMin">
+                        <property name="enabled">
+                         <bool>true</bool>
+                        </property>
+                        <property name="orientation">
+                         <enum>Qt::Orientation::Horizontal</enum>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="deathMaxLabel">
+                        <property name="font">
+                         <font>
+                          <bold>true</bold>
+                         </font>
+                        </property>
+                        <property name="text">
+                         <string>Do:</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QSlider" name="deathSliderMax">
+                        <property name="enabled">
+                         <bool>true</bool>
+                        </property>
+                        <property name="orientation">
+                         <enum>Qt::Orientation::Horizontal</enum>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </widget>
                    </item>
                    <item>
-                    <widget class="QLabel" name="deathMinLabel">
-                     <property name="font">
-                      <font>
-                       <bold>true</bold>
-                      </font>
+                    <widget class="QFrame" name="frame_16">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                       <horstretch>1</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
                      </property>
-                     <property name="text">
-                      <string>Od:</string>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16777215</width>
+                       <height>100</height>
+                      </size>
                      </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QSlider" name="deathSliderMin">
-                     <property name="enabled">
-                      <bool>true</bool>
+                     <property name="frameShape">
+                      <enum>QFrame::Shape::Panel</enum>
                      </property>
-                     <property name="orientation">
-                      <enum>Qt::Orientation::Horizontal</enum>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLabel" name="deathMaxLabel">
-                     <property name="font">
-                      <font>
-                       <bold>true</bold>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string>Do:</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QSlider" name="deathSliderMax">
-                     <property name="enabled">
-                      <bool>true</bool>
-                     </property>
-                     <property name="orientation">
-                      <enum>Qt::Orientation::Horizontal</enum>
-                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_15">
+                      <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
+                       <widget class="QLabel" name="label_7">
+                        <property name="maximumSize">
+                         <size>
+                          <width>16777215</width>
+                          <height>70</height>
+                         </size>
+                        </property>
+                        <property name="text">
+                         <string>Włączyć losowy zakres?</string>
+                        </property>
+                        <property name="alignment">
+                         <set>Qt::AlignmentFlag::AlignCenter</set>
+                        </property>
+                        <property name="wordWrap">
+                         <bool>true</bool>
+                        </property>
+                        <property name="textInteractionFlags">
+                         <set>Qt::TextInteractionFlag::NoTextInteraction</set>
+                        </property>
+                       </widget>
+                      </item>
+                      <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignVCenter">
+                       <widget class="QCheckBox" name="deadRandom">
+                        <property name="text">
+                         <string/>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </widget>
                    </item>
                   </layout>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="QFrame" name="frame_16">
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>100</height>
-                </size>
-               </property>
-               <property name="frameShape">
-                <enum>QFrame::Shape::Panel</enum>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout_15">
-                <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignBottom">
-                 <widget class="QLabel" name="label_7">
-                  <property name="maximumSize">
-                   <size>
-                    <width>16777215</width>
-                    <height>70</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>Włączyć losowy zakres?</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignmentFlag::AlignCenter</set>
-                  </property>
-                  <property name="wordWrap">
-                   <bool>true</bool>
-                  </property>
-                  <property name="textInteractionFlags">
-                   <set>Qt::TextInteractionFlag::NoTextInteraction</set>
-                  </property>
-                 </widget>
-                </item>
-                <item alignment="Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop">
-                 <widget class="QCheckBox" name="deadRandom">
-                  <property name="text">
-                   <string/>
-                  </property>
                  </widget>
                 </item>
                </layout>

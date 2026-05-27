@@ -100,9 +100,9 @@ void BoardCanvas::setScaleFactor(int factor) {
 }
 
 void BoardCanvas::setSpacing(float spacing) {
-    m_spacing = spacing/10.0f;
-    instanceBufferDirty = true; 
-    prepareInstanceDataAsync(); 
+    m_spacing = spacing / 10.0f;
+    instanceBufferDirty = true;
+    prepareInstanceDataAsync();
 }
 
 // ====================================================================
@@ -281,6 +281,9 @@ void BoardCanvas::mousePressEvent(QMouseEvent* event) {
         for (int x = 0; x < gridSize; ++x) {
             for (int y = 0; y < gridSize; ++y) {
                 for (int z = 0; z < gridSize; ++z) {
+                    if (grid[getIndex(x, y, z, gridSize)] == CellState::Dead) {
+                        continue;
+                    }
                     QVector3D center(x * m_spacing, y * m_spacing, z * m_spacing);
                     QVector3D bMin = center - QVector3D(r, r, r);
                     QVector3D bMax = center + QVector3D(r, r, r);

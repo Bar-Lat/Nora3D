@@ -26,10 +26,13 @@ public:
         int getImmunityDuration() const { return immunityDuration; }
         int getInfectionChance() const { return infectionChance; }
         int getDeathNumber() const { return deathNumber; }
+        int getFilterNum() const { return filterNum; }
 
     // settery
         void setCellState(int x, int y, int z, CellState state);       // ustawienie stanu komorki
-        void setParams(int infDuration, int immDuration, int infChance, int dmax, int dmin); // ustawienie danych zasad
+        void setParams(int infDuration, int immDuration, int infChance, int dmax, int dmin, int fNum); // ustawienie danych zasad
+
+        void setFilteringEnabled(bool enabled) { filterEnabled = enabled; }
 
 private:
     std::vector<int> infectionCounters;
@@ -38,6 +41,7 @@ private:
     // podstawowe dane
     int gridSize = 0;
     int currentTime = 0;
+    bool filterEnabled = false;
 
     // bufory
     Grid3D cells;         // Aktualny stan planszy
@@ -52,12 +56,14 @@ private:
     int deathNumber = 5;
     int deathMin = 1;
     int deathMax = 1;
+    int filterNum = 0;
 
 	// maksymalna liczba zarażonych
     int maxInfectedCount = 0;
 
     // licznik zarazonych sasiadow
     int countInfectedNeighbors(int x, int y, int z) const; 
+    int countHealthyNeighbors(int x, int y, int z) const; 
 
     
 };

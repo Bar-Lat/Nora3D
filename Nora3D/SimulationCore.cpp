@@ -6,7 +6,7 @@
 
 void SimulationCore::reset(int size)
 {
-	// reset rozmiaru siatki, czasu i maksymalnej liczby zarażonych
+    // reset rozmiaru siatki, czasu i maksymalnej liczby zarażonych
     gridSize = std::max(5, size);
     currentTime = 0;
     maxInfectedCount = 0;
@@ -16,7 +16,7 @@ void SimulationCore::reset(int size)
     cells.assign(totalCells, CellState::Healthy);
     nextCells.assign(totalCells, CellState::Healthy);
 
-	// inicjalizacja czasu i buforu timerów zerami
+    // inicjalizacja czasu i buforu timerów zerami
     timers.assign(totalCells, 0);
     nextTimers.assign(totalCells, 0);
 
@@ -26,7 +26,7 @@ void SimulationCore::reset(int size)
     individualDeathThresholds.assign(totalCells, 0);
 }
 
-void SimulationCore::setParams(int infDuration, int immDuration, int infChance, int dmin, int dmax)
+void SimulationCore::setParams(int infDuration, int immDuration, int infChance, int dmin, int dmax, int fNum)
 {
     // minimalne wartosci dla czasu
     infectionDuration = std::max(1, infDuration);
@@ -46,6 +46,7 @@ void SimulationCore::setParams(int infDuration, int immDuration, int infChance, 
 
     deathMin = minVal;
     deathMax = maxVal;
+    filterNum = fNum;
 }
 
 // ====================================================================
@@ -56,7 +57,7 @@ void SimulationCore::setParams(int infDuration, int immDuration, int infChance, 
 CellState SimulationCore::getCellState(int x, int y, int z) const
 {
     if (x >= 0 && x < gridSize && y >= 0 && y < gridSize && z >= 0 && z < gridSize) {
-        return cells[getIndex(x,y,z,gridSize)];
+        return cells[getIndex(x, y, z, gridSize)];
     }
     // Domyślnie zwraca Healthy poza granicami
     return CellState::Healthy;
@@ -125,14 +126,25 @@ void SimulationCore::step() {
                 {
                     newTimer++;
                     if (newTimer > infectionDuration) {
-                        newCounter++; 
-                        if (newCounter >= individualDeathThresholds[xyz]) {
-                            newState = CellState::Dead;
-                            newTimer = 0;
-                        }
-                        else {
+                        // Obliczamy sąsiadów do filtra
+                        int protectedNeighbors = countHealthyNeighbors(i, j, k);
+
+                        // Jeśli filtr włączony I sąsiedzi chronią komórkę -> staje się odporna zamiast umierać
+                        if (filterEnabled && protectedNeighbors > filterNum) {
                             newState = CellState::Immune;
                             newTimer = 1;
+                        }
+                        else {
+                            // Standardowa logika śmierci
+                            newCounter++;
+                            if (newCounter >= individualDeathThresholds[xyz]) {
+                                newState = CellState::Dead;
+                                newTimer = 0;
+                            }
+                            else {
+                                newState = CellState::Immune;
+                                newTimer = 1;
+                            }
                         }
                     }
                     break;
@@ -210,4 +222,34 @@ std::tuple<int, int, int, int> SimulationCore::getCellCounts() const
         else if (state == CellState::Dead) dead++;
     }
     return std::make_tuple(healthy, infected, immune, dead);
+}
+
+// zliczanie zdrowych i odpornych wokol komorki
+int SimulationCore::countHealthyNeighbors(int x, int y, int z) const
+{
+    int count = 0;
+
+    // Przeszukujemy sześcian wokół komórki
+    for (int dx = -2; dx <= 2; ++dx) {
+        for (int dy = -2; dy <= 2; ++dy) {
+            for (int dz = -2; dz <= 2; ++dz) {
+
+                if (dx == 0 && dy == 0 && dz == 0) continue; // Pomijamy samą siebie
+
+                int nx = x + dx;
+                int ny = y + dy;
+                int nz = z + dz;
+
+                if (nx >= 0 && nx < gridSize &&
+                    ny >= 0 && ny < gridSize &&
+                    nz >= 0 && nz < gridSize)
+                {
+                    if (cells[getIndex(nx, ny, nz, gridSize)] == CellState::Healthy || cells[getIndex(nx, ny, nz, gridSize)] == CellState::Immune) {
+                        count++;
+                    }
+                }
+            }
+        }
+    }
+    return count;
 }

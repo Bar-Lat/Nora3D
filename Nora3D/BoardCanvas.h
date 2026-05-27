@@ -17,39 +17,40 @@
 #include <vector>
 #include <limits>
 
-#include "SimulationTypes.h"  // <-- ZMIANA: użyj istniejącego pliku
+#include "SimulationTypes.h"  
 
-// Struktura dla instanced rendering
 struct InstanceData {
     QVector3D offset;
     QVector3D color;
-    float padding[2]; // Wyrównanie do 32 bajtów
+    float padding[2];
 
     InstanceData() : offset(), color(), padding{ 0.0f, 0.0f } {}
 };
 
-class BoardCanvas : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
-{
+class BoardCanvas : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
     Q_OBJECT
 
 public:
     explicit BoardCanvas(QWidget* parent = nullptr);
-    ~BoardCanvas() override;
+    ~BoardCanvas();
 
     void setGrid(const Grid3D& newGrid);
-    void setScaleFactor(int factor);
     void setSpacing(float spacing);
+    void setScaleFactor(int factor);
 
 signals:
     void cellClicked(int x, int y, int z);
 
 protected:
     void initializeGL() override;
-    void resizeGL(int w, int h) override;
     void paintGL() override;
-    void wheelEvent(QWheelEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
+    void resizeGL(int w, int h) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+
+
+    
 
 private:
     // Metody pomocnicze
@@ -59,44 +60,31 @@ private:
     void prepareInstanceDataAsync();
     bool isInFrustum(const QVector3D& center, const QMatrix4x4& mvp) const;
 
-    // Dane siatki
+    // Dane symulacji
     Grid3D grid;
     int gridSize;
-    int m_scaleFactor;
-    float m_spacing;
-
-    // Kamera
-    float m_zoom;
-    float m_rotationX;
-    float m_rotationY;
-    QPoint m_lastMousePos;
-    QMatrix4x4 projection;
-
-    // OpenGL obiekty
-    QOpenGLShaderProgram* program;
-
-    // VAO/VBO dla geometrii bazowej (jeden sześcian)
-    QOpenGLVertexArrayObject vao;
-    QOpenGLBuffer vbo;
-    QOpenGLBuffer vboLines;
-
-    // VAO/VBO dla instanced rendering
-    QOpenGLVertexArrayObject vaoInstanced;
-    QOpenGLBuffer vboInstanced;
-
-    // VAO/VBO filled i lines
-    QOpenGLVertexArrayObject vaoFilled; 
-    QOpenGLVertexArrayObject vaoLines;
-
-    // Dane instancji
     std::vector<InstanceData> instanceData;
     std::vector<InstanceData> visibleInstances;
-    bool instanceBufferDirty;
+
+    // OpenGL
+    QOpenGLShaderProgram* program;
+    QOpenGLVertexArrayObject vao, vaoFilled, vaoLines, vaoInstanced;
+    QOpenGLBuffer vbo, vboLines, vboInstanced;
+    QMatrix4x4 projection;
 
     // Wielowątkowość
     QFuture<std::vector<InstanceData>> prepareFuture;
     QFutureWatcher<std::vector<InstanceData>> prepareWatcher;
     bool isPreparingData;
+    bool instanceBufferDirty;
+
+    // Sterowanie widokiem
+    float m_spacing;
+    float m_zoom;
+    float m_rotationX;
+    float m_rotationY;
+    int m_scaleFactor;
+    QPoint m_lastMousePos;
 };
 
 #endif // BOARDCANVAS_H
