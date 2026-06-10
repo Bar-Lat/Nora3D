@@ -103,7 +103,7 @@ void SimulationCore::step() {
                 int newCounter = infectionCounters[xyz];
                 switch (currentState) {
                 case CellState::Healthy: {
-                    int infectedCount = countInfectedNeighbors(i, j, k);
+                    int infectedCount = countNeighborsByType(CellState::Infected, i, j, k);
                     if (infectedCount > 0) {
                         bool getsInfected = false;
                         for (int l = 0; l < infectedCount; ++l) {
@@ -127,7 +127,7 @@ void SimulationCore::step() {
                     newTimer++;
                     if (newTimer > infectionDuration) {
                         // Obliczamy sąsiadów do filtra
-                        int protectedNeighbors = countHealthyNeighbors(i, j, k);
+                        int protectedNeighbors = countNeighborsByType(CellState::Healthy, i, j, k);
 
                         // Jeśli filtr włączony I sąsiedzi chronią komórkę -> staje się odporna zamiast umierać
                         if (filterEnabled && protectedNeighbors > filterNum) {
@@ -176,36 +176,7 @@ void SimulationCore::step() {
 // METODY POMOCNICZE
 // ====================================================================
 
-// zliczanie zarazonych wokol komorki
-int SimulationCore::countInfectedNeighbors(int x, int y, int z) const
-{
-    int count = 0;
 
-    // Przeszukujemy sześcian wokół komórki
-    for (int dx = -1; dx <= 1; ++dx) {
-        for (int dy = -1; dy <= 1; ++dy) {
-            for (int dz = -1; dz <= 1; ++dz) {
-
-                if (dx == 0 && dy == 0 && dz == 0) continue; // Pomijamy samą siebie
-
-                int nx = x + dx;
-                int ny = y + dy;
-                int nz = z + dz;
-
-                // Sprawdzamy granice (gridSize pochodzi z klasy)[cite: 3]
-                if (nx >= 0 && nx < gridSize &&
-                    ny >= 0 && ny < gridSize &&
-                    nz >= 0 && nz < gridSize)
-                {
-                    if (cells[getIndex(nx, ny, nz, gridSize)] == CellState::Infected) {
-                        count++;
-                    }
-                }
-            }
-        }
-    }
-    return count;
-}
 
 // zliczanie komórek w danym stanie
 std::tuple<int, int, int, int> SimulationCore::getCellCounts() const
@@ -225,14 +196,14 @@ std::tuple<int, int, int, int> SimulationCore::getCellCounts() const
 }
 
 // zliczanie zdrowych i odpornych wokol komorki
-int SimulationCore::countHealthyNeighbors(int x, int y, int z) const
+int SimulationCore::countNeighborsByType(CellState type, int x, int y, int z) const
 {
     int count = 0;
 
     // Przeszukujemy sześcian wokół komórki
-    for (int dx = -2; dx <= 2; ++dx) {
-        for (int dy = -2; dy <= 2; ++dy) {
-            for (int dz = -2; dz <= 2; ++dz) {
+    for (int dx = -1; dx <= 1; ++dx) {
+        for (int dy = -1; dy <= 1; ++dy) {
+            for (int dz = -1; dz <= 1; ++dz) {
 
                 if (dx == 0 && dy == 0 && dz == 0) continue; // Pomijamy samą siebie
 
@@ -244,7 +215,7 @@ int SimulationCore::countHealthyNeighbors(int x, int y, int z) const
                     ny >= 0 && ny < gridSize &&
                     nz >= 0 && nz < gridSize)
                 {
-                    if (cells[getIndex(nx, ny, nz, gridSize)] == CellState::Healthy || cells[getIndex(nx, ny, nz, gridSize)] == CellState::Immune) {
+                    if (cells[getIndex(nx, ny, nz, gridSize)] == type ) {
                         count++;
                     }
                 }

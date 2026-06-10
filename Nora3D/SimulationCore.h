@@ -62,8 +62,8 @@ private:
     int maxInfectedCount = 0;
 
     // licznik zarazonych sasiadow
-    int countInfectedNeighbors(int x, int y, int z) const; 
-    int countHealthyNeighbors(int x, int y, int z) const; 
+    int countNeighborsByType(CellState, int x, int y, int z) const; 
+
 
     
 };
