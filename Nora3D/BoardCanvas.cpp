@@ -4,6 +4,7 @@
 #include <QtConcurrent>
 #include <cmath>
 #include <algorithm>
+#include <utility>
 
 // ====================================================================
 // SHADERY Z INSTANCED RENDERING
@@ -87,9 +88,15 @@ BoardCanvas::~BoardCanvas() {
 
 void BoardCanvas::setGrid(const Grid3D& newGrid) {
     grid = newGrid;
-    if (!grid.empty()) {
-        gridSize = static_cast<int>(std::round(std::pow(grid.size(), 1.0 / 3.0)));
+    if (grid.empty()) {
+        gridSize = 0;
+        instanceData.clear();
+        instanceBufferDirty = false;
+        update();
+        return;
     }
+
+    gridSize = static_cast<int>(std::round(std::pow(grid.size(), 1.0 / 3.0)));
     instanceBufferDirty = true;
     prepareInstanceDataAsync();
 }
@@ -133,6 +140,7 @@ void BoardCanvas::prepareInstanceDataAsync() {
     if (isPreparingData || grid.empty()) return;
 
     isPreparingData = true;
+    instanceBufferDirty = false;
 
     Grid3D gridCopy = grid;
     int size = gridSize;
@@ -179,9 +187,15 @@ void BoardCanvas::prepareInstanceDataAsync() {
 void BoardCanvas::updateInstanceBuffer() {
     if (!prepareFuture.isFinished()) return;
 
-    instanceData = prepareFuture.result(); // To już jest wektor bez "martwych"
+    std::vector<InstanceData> preparedData = prepareFuture.result();
     isPreparingData = false;
-    instanceBufferDirty = false;
+
+    if (instanceBufferDirty) {
+        prepareInstanceDataAsync();
+        return;
+    }
+
+    instanceData = std::move(preparedData);
 
     makeCurrent();
 

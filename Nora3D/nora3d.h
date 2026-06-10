@@ -45,6 +45,7 @@ private slots:
     void updateSliderLabels(int value);
     void handleCellClick(int x, int y, int z);
     void onShowAnalyticsClicked();
+    void loadSimulationConfiguration(const SimulationConfiguration& configuration);
 
     void onRandomDeathToggled(bool checked);
 

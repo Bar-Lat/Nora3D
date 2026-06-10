@@ -9,7 +9,7 @@ class SimulationCore
 {
 public:
     SimulationCore() = default;
-
+    
     void reset(int size);       // reset symulacji
     void step();                // krok sumulacji
 

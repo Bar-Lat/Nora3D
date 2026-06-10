@@ -1,6 +1,8 @@
 #include "nora3d.h"
 #include "AnalyticsWindow.h"
 
+#include <QSignalBlocker>
+
 // ====================================================================
 // KONSTRUKTOR I DESTRUKTOR
 // ====================================================================
@@ -48,8 +50,8 @@ nora3d::nora3d(QWidget* parent)
     ui->deathSliderMin->setRange(1, 100);
     ui->deathSliderMin->setValue(10);
 
-    ui->filterSlider->setRange(1, 125);
-    ui->deathSliderMin->setValue(50);
+    ui->filterSlider->setRange(0, 26);
+    ui->filterSlider->setValue(6);
 
 
     // polaczenia sygnal slot
@@ -165,11 +167,22 @@ void nora3d::onStartStopClicked()
         // --- ROZPOCZĘCIE NOWEJ SYMULACJI W BAZIE ---
         // Rejestrujemy symulację w bazie tylko, jeśli startujemy od zera (cykl 0)
         if (simulation->time() == 0) {
+            int deathMin = ui->deathSlider->value();
+            int deathMax = ui->deathSlider->value();
+            if (ui->deadRandom->isChecked()) {
+                deathMin = ui->deathSliderMin->value();
+                deathMax = ui->deathSliderMax->value();
+            }
+
             currentSimulationId = dbManager.startSimulation(
                 simulation->size(),
                 simulation->getInfectionDuration(),
                 simulation->getImmunityDuration(),
-                simulation->getInfectionChance()
+                simulation->getInfectionChance(),
+                deathMin,
+                deathMax,
+                ui->filterSlider->value(),
+                ui->filterCheckbox->isChecked()
             );
             timeToPeak = 0;
             currentPeakInfected = 0;
@@ -218,7 +231,7 @@ void nora3d::onTick()
 
     // --- LOGOWANIE CYKLU I ANALITYKA ---
     if (currentSimulationId != -1) {
-        dbManager.logCycle(currentSimulationId, simulation->time(), healthyCount, infectedCount, immuneCount);
+        dbManager.logCycle(currentSimulationId, simulation->time(), healthyCount, infectedCount, immuneCount, deadCount);
 
         // Aktualizacja szczytu epidemii
         if (infectedCount > currentPeakInfected) {
@@ -237,13 +250,14 @@ void nora3d::onTick()
 
             // Obliczenie całkowitej liczby przypadków: początkowa populacja - końcowi zdrowi
             int totalPopulation = size * size * size;
-            int totalCases = totalPopulation - healthyCount;
+            int totalCases = totalPopulation - healthyCount - deadCount;
 
             // Odporność stadna osiągnięta, jeśli na końcu zostali jacyś zdrowi obywatele
             bool herdImmunityReached = (healthyCount > 0);
 
             // --- ZAPIS KOŃCOWY DO BAZY ---
             if (currentSimulationId != -1) {
+                dbManager.saveFinalGrid(currentSimulationId, size, simulation->grid());
                 dbManager.finishSimulation(currentSimulationId, timeCycles, maxInfected, timeToPeak, totalCases, herdImmunityReached);
             }
 
@@ -332,6 +346,58 @@ void nora3d::handleCellClick(int x, int y, int z)
     
 }
 void nora3d::onShowAnalyticsClicked() {
-    AnalyticsWindow analyticsDialog(this);
+    AnalyticsWindow analyticsDialog(&dbManager, this);
+    connect(&analyticsDialog, &AnalyticsWindow::configurationLoadRequested,
+        this, &nora3d::loadSimulationConfiguration);
     analyticsDialog.exec();
+}
+
+void nora3d::loadSimulationConfiguration(const SimulationConfiguration& configuration) {
+    timer->stop();
+    ui->startStopButton->setText("Start");
+
+    const bool randomDeath = configuration.deathMin != configuration.deathMax;
+
+    {
+        const QSignalBlocker boardSizeBlocker(ui->boardSize);
+        const QSignalBlocker infectionBlocker(ui->timeInfection);
+        const QSignalBlocker immuneBlocker(ui->timeImmune);
+        const QSignalBlocker chanceBlocker(ui->chanceInfection);
+        const QSignalBlocker deathBlocker(ui->deathSlider);
+        const QSignalBlocker deathMinBlocker(ui->deathSliderMin);
+        const QSignalBlocker deathMaxBlocker(ui->deathSliderMax);
+        const QSignalBlocker filterBlocker(ui->filterSlider);
+        const QSignalBlocker randomDeathBlocker(ui->deadRandom);
+        const QSignalBlocker filterCheckBlocker(ui->filterCheckbox);
+
+        ui->boardSize->setValue(configuration.gridSize);
+        ui->timeInfection->setValue(configuration.infectionDuration);
+        ui->timeImmune->setValue(configuration.immunityDuration);
+        ui->chanceInfection->setValue(configuration.infectionChance);
+        ui->deadRandom->setChecked(randomDeath);
+        ui->deathSlider->setValue(configuration.deathMin);
+        ui->deathSliderMin->setValue(configuration.deathMin);
+        ui->deathSliderMax->setValue(configuration.deathMax);
+        ui->filterCheckbox->setChecked(configuration.filterEnabled);
+        ui->filterSlider->setValue(configuration.filterNum);
+    }
+
+    onRandomDeathToggled(randomDeath);
+    ui->filterSlider->setEnabled(configuration.filterEnabled);
+    simulation->setFilteringEnabled(configuration.filterEnabled);
+
+    ui->InfectionSeconds->setText(QString::number(ui->timeInfection->value()) + " cykli");
+    ui->immuneSeconds->setText(QString::number(ui->timeImmune->value()) + " cykli");
+    ui->infectionProbability->setText(QString::number(ui->chanceInfection->value()) + " %");
+    ui->deathLabel->setText(QString::number(ui->deathSlider->value()));
+    ui->deathMinLabel->setText("Od: " + QString::number(ui->deathSliderMin->value()));
+    ui->deathMaxLabel->setText("Do: " + QString::number(ui->deathSliderMax->value()));
+    ui->filterLabel->setText(QString::number(ui->filterSlider->value()));
+
+    applySettings();
+    simulation->reset(ui->boardSize->value());
+    currentSimulationId = -1;
+    timeToPeak = 0;
+    currentPeakInfected = 0;
+    updateUI();
 }

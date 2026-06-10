@@ -46,7 +46,7 @@ void SimulationCore::setParams(int infDuration, int immDuration, int infChance, 
 
     deathMin = minVal;
     deathMax = maxVal;
-    filterNum = fNum;
+    filterNum = std::clamp(fNum, 0, 26);
 }
 
 // ====================================================================
@@ -127,12 +127,13 @@ void SimulationCore::step() {
                     newTimer++;
                     if (newTimer > infectionDuration) {
                         // Obliczamy sąsiadów do filtra
-                        int protectedNeighbors = countNeighborsByType(CellState::Healthy, i, j, k);
+                        int protectedNeighbors = countNeighborsByType(CellState::Healthy, i, j, k) + countNeighborsByType(CellState::Immune, i, j, k);
 
                         // Jeśli filtr włączony I sąsiedzi chronią komórkę -> staje się odporna zamiast umierać
-                        if (filterEnabled && protectedNeighbors > filterNum) {
+                        if (filterEnabled && protectedNeighbors >= filterNum) {
                             newState = CellState::Immune;
                             newTimer = 1;
+                            newCounter = infectionCounters[xyz];
                         }
                         else {
                             // Standardowa logika śmierci
@@ -140,6 +141,8 @@ void SimulationCore::step() {
                             if (newCounter >= individualDeathThresholds[xyz]) {
                                 newState = CellState::Dead;
                                 newTimer = 0;
+                                newCounter = 0;
+                                individualDeathThresholds[xyz] = 0;
                             }
                             else {
                                 newState = CellState::Immune;
