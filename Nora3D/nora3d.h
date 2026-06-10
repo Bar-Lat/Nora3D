@@ -14,7 +14,7 @@
 #include "SimulationCore.h"
 #include "BoardCanvas.h"
 #include "ui_nora3d.h"
-
+#include "DatabaseManager.h"
 
 class nora3d : public QMainWindow {
     Q_OBJECT
@@ -24,11 +24,17 @@ public:
     ~nora3d();
 
 private:
-	// komponenty i stan
-    Ui::Nora3DClass *ui;
+    // komponenty i stan
+    Ui::Nora3DClass* ui;
     std::unique_ptr<SimulationCore> simulation;
     BoardCanvas* boardCanvas;
     QTimer* timer;
+
+    // --- NOWE ZMIENNE BAZY DANYCH I ANALITYKI ---
+    DatabaseManager dbManager;
+    int currentSimulationId = -1;
+    int timeToPeak = 0;
+    int currentPeakInfected = 0;
 
 private slots:
 	// sloty (reakcje na zdarzenia)
@@ -38,6 +44,8 @@ private slots:
     void onTick();
     void updateSliderLabels(int value);
     void handleCellClick(int x, int y, int z);
+    void onShowAnalyticsClicked();
+
     void onRandomDeathToggled(bool checked);
 
 private:
