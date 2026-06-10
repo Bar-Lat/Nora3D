@@ -17,7 +17,7 @@ public:
         const Grid3D& grid() const { return cells; }                      // aktualny stan siatki
         int time() const { return currentTime; }                        // aktualny czas w cyklach
         int size() const { return gridSize; }                           // rozmiar siatki 
-	    std::tuple<int, int, int> getCellCounts() const;                // krotka liczby danych komórek (zdrowe, zarażone, odporne)
+	    std::tuple<int, int, int, int> getCellCounts() const;                // krotka liczby danych komórek (zdrowe, zarażone, odporne)
         CellState getCellState(int x, int y, int z) const;                     // stan komorki
         int getMaxInfectedCount() const { return maxInfectedCount; }    // maksymalna liczba zarażonych w symulacji
 
@@ -25,15 +25,23 @@ public:
         int getInfectionDuration() const { return infectionDuration; }
         int getImmunityDuration() const { return immunityDuration; }
         int getInfectionChance() const { return infectionChance; }
+        int getDeathNumber() const { return deathNumber; }
+        int getFilterNum() const { return filterNum; }
 
     // settery
         void setCellState(int x, int y, int z, CellState state);       // ustawienie stanu komorki
-        void setParams(int infDuration, int immDuration, int infChance); // ustawienie danych zasad
+        void setParams(int infDuration, int immDuration, int infChance, int dmax, int dmin, int fNum); // ustawienie danych zasad
+
+        void setFilteringEnabled(bool enabled) { filterEnabled = enabled; }
 
 private:
+    std::vector<int> infectionCounters;
+    std::vector<int> nextInfectionCounters; 
+    std::vector<int> individualDeathThresholds; 
     // podstawowe dane
     int gridSize = 0;
     int currentTime = 0;
+    bool filterEnabled = false;
 
     // bufory
     Grid3D cells;         // Aktualny stan planszy
@@ -45,12 +53,17 @@ private:
     int infectionDuration = 6;
     int immunityDuration = 4;
     int infectionChance = 50;
+    int deathNumber = 5;
+    int deathMin = 1;
+    int deathMax = 1;
+    int filterNum = 0;
 
 	// maksymalna liczba zarażonych
     int maxInfectedCount = 0;
 
     // licznik zarazonych sasiadow
-    int countInfectedNeighbors(int x, int y, int z) const; 
+    int countNeighborsByType(CellState, int x, int y, int z) const; 
+
 
     
 };

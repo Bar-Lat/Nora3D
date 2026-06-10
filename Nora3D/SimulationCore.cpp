@@ -6,7 +6,7 @@
 
 void SimulationCore::reset(int size)
 {
-	// reset rozmiaru siatki, czasu i maksymalnej liczby zarażonych
+    // reset rozmiaru siatki, czasu i maksymalnej liczby zarażonych
     gridSize = std::max(5, size);
     currentTime = 0;
     maxInfectedCount = 0;
@@ -16,19 +16,37 @@ void SimulationCore::reset(int size)
     cells.assign(totalCells, CellState::Healthy);
     nextCells.assign(totalCells, CellState::Healthy);
 
-	// inicjalizacja czasu i buforu timerów zerami
+    // inicjalizacja czasu i buforu timerów zerami
     timers.assign(totalCells, 0);
     nextTimers.assign(totalCells, 0);
+
+    // inicjalizacja liczby zarażeń danej komorki i buforu zerami
+    infectionCounters.assign(totalCells, 0);
+    nextInfectionCounters.assign(totalCells, 0);
+    individualDeathThresholds.assign(totalCells, 0);
 }
 
-void SimulationCore::setParams(int infDuration, int immDuration, int infChance)
+void SimulationCore::setParams(int infDuration, int immDuration, int infChance, int dmin, int dmax, int fNum)
 {
-    // minimalne wartosci
+    // minimalne wartosci dla czasu
     infectionDuration = std::max(1, infDuration);
     immunityDuration = std::max(1, immDuration);
 
     // ogranicznik szansy zarazenia
     infectionChance = std::clamp(infChance, 0, 100);
+
+    // Zabezpieczenie zakresu śmierci
+    // Upewniamy się, że dmin nie jest większe niż dmax
+    int minVal = std::clamp(dmin, 1, 100);
+    int maxVal = std::clamp(dmax, 1, 100);
+
+    if (minVal > maxVal) {
+        std::swap(minVal, maxVal);
+    }
+
+    deathMin = minVal;
+    deathMax = maxVal;
+    filterNum = fNum;
 }
 
 // ====================================================================
@@ -39,7 +57,7 @@ void SimulationCore::setParams(int infDuration, int immDuration, int infChance)
 CellState SimulationCore::getCellState(int x, int y, int z) const
 {
     if (x >= 0 && x < gridSize && y >= 0 && y < gridSize && z >= 0 && z < gridSize) {
-        return cells[getIndex(x,y,z,gridSize)];
+        return cells[getIndex(x, y, z, gridSize)];
     }
     // Domyślnie zwraca Healthy poza granicami
     return CellState::Healthy;
@@ -49,9 +67,20 @@ CellState SimulationCore::getCellState(int x, int y, int z) const
 void SimulationCore::setCellState(int x, int y, int z, CellState state)
 {
     if (x >= 0 && x < gridSize && y >= 0 && y < gridSize && z >= 0 && z < gridSize) {
-        // Ustawienie stanu i timera
-        cells[getIndex(x, y, z, gridSize)] = state;
-        timers[getIndex(x, y, z, gridSize)] = (state == CellState::Infected) ? 1 : 0;
+        int xyz = getIndex(x, y, z, gridSize);
+
+        cells[xyz] = state;
+        timers[xyz] = (state == CellState::Infected) ? 1 : 0;
+
+        if (state == CellState::Infected) {
+            infectionCounters[xyz] = 1;
+
+            individualDeathThresholds[xyz] = deathMin + QRandomGenerator::global()->bounded(deathMax - deathMin + 1);
+        }
+        else {
+            infectionCounters[xyz] = 0;
+            individualDeathThresholds[xyz] = 0;
+        }
     }
 }
 
@@ -60,57 +89,67 @@ void SimulationCore::setCellState(int x, int y, int z, CellState state)
 // ====================================================================
 
 // krok symulacji
-void SimulationCore::step()
-{
+void SimulationCore::step() {
     currentTime++;
     auto* rng = QRandomGenerator::global();
 
-	// iteracja po wszystkich komórkach siatki i zapis do bufora
     for (int i = 0; i < gridSize; ++i) {
         for (int j = 0; j < gridSize; ++j) {
-            for (int k = 0;k < gridSize; ++k) {
-
+            for (int k = 0; k < gridSize; ++k) {
                 int xyz = getIndex(i, j, k, gridSize);
-                CellState currentState = cells [xyz];
+                CellState currentState = cells[xyz];
                 CellState newState = currentState;
                 int newTimer = timers[xyz];
-
+                int newCounter = infectionCounters[xyz];
                 switch (currentState) {
-                    // zdrowa -> zarażona
-                case CellState::Healthy:
-                {
-                    int infectedCount = countInfectedNeighbors(i, j, k);
+                case CellState::Healthy: {
+                    int infectedCount = countNeighborsByType(CellState::Infected, i, j, k);
                     if (infectedCount > 0) {
                         bool getsInfected = false;
-
-                        // szansa zarażenia zależna od zarażonych sąsiadów
                         for (int l = 0; l < infectedCount; ++l) {
                             if (rng->bounded(100) < infectionChance) {
                                 getsInfected = true;
                                 break;
                             }
                         }
-                        // zmiana stanu i start licznika
                         if (getsInfected) {
                             newState = CellState::Infected;
                             newTimer = 1;
+                            newCounter++; // Inkrementacja licznika przy zarażeniu
+                            // Losowanie indywidualnego progu śmierci dla tej komórki
+                            individualDeathThresholds[xyz] = deathMin + rng->bounded(deathMax - deathMin + 1);
                         }
                     }
                     break;
                 }
-                // zarażona -> odporna
                 case CellState::Infected:
                 {
                     newTimer++;
                     if (newTimer > infectionDuration) {
-                        newState = CellState::Immune;
-                        newTimer = 1;
+                        // Obliczamy sąsiadów do filtra
+                        int protectedNeighbors = countNeighborsByType(CellState::Healthy, i, j, k);
+
+                        // Jeśli filtr włączony I sąsiedzi chronią komórkę -> staje się odporna zamiast umierać
+                        if (filterEnabled && protectedNeighbors > filterNum) {
+                            newState = CellState::Immune;
+                            newTimer = 1;
+                        }
+                        else {
+                            // Standardowa logika śmierci
+                            newCounter++;
+                            if (newCounter >= individualDeathThresholds[xyz]) {
+                                newState = CellState::Dead;
+                                newTimer = 0;
+                            }
+                            else {
+                                newState = CellState::Immune;
+                                newTimer = 1;
+                            }
+                        }
                     }
                     break;
                 }
-                // odporna -> zdrowa
-                case CellState::Immune:
-                {
+                case CellState::Immune: {
                     newTimer++;
                     if (newTimer > immunityDuration) {
                         newState = CellState::Healthy;
@@ -118,36 +157,46 @@ void SimulationCore::step()
                     }
                     break;
                 }
+                case CellState::Dead:
+                    break;
                 }
 
-                // zapis do bufora
                 nextCells[xyz] = newState;
                 nextTimers[xyz] = newTimer;
+                nextInfectionCounters[xyz] = newCounter;
             }
         }
     }
-
-	// zamiana buforów z aktualnymi danymi
     std::swap(cells, nextCells);
     std::swap(timers, nextTimers);
-
-	// zliczenie komórek w danym stanie
-    int healthy, infected, immune;
-    std::tie(healthy, infected, immune) = getCellCounts();
-
-	// maksymalna liczba zarażonych
-    int currentInfected = infected;
-    if (currentInfected > maxInfectedCount) {
-        maxInfectedCount = currentInfected;
-    }
+    std::swap(infectionCounters, nextInfectionCounters);
 }
 
 // ====================================================================
 // METODY POMOCNICZE
 // ====================================================================
 
-// zliczanie zarazonych wokol komorki
-int SimulationCore::countInfectedNeighbors(int x, int y, int z) const
+
+
+// zliczanie komórek w danym stanie
+std::tuple<int, int, int, int> SimulationCore::getCellCounts() const
+{
+    int healthy = 0;
+    int infected = 0;
+    int immune = 0;
+    int dead = 0;
+
+    for (const auto& state : cells) {
+        if (state == CellState::Healthy) healthy++;
+        else if (state == CellState::Infected) infected++;
+        else if (state == CellState::Immune) immune++;
+        else if (state == CellState::Dead) dead++;
+    }
+    return std::make_tuple(healthy, infected, immune, dead);
+}
+
+// zliczanie zdrowych i odpornych wokol komorki
+int SimulationCore::countNeighborsByType(CellState type, int x, int y, int z) const
 {
     int count = 0;
 
@@ -162,12 +211,11 @@ int SimulationCore::countInfectedNeighbors(int x, int y, int z) const
                 int ny = y + dy;
                 int nz = z + dz;
 
-                // Sprawdzamy granice (gridSize pochodzi z klasy)[cite: 3]
                 if (nx >= 0 && nx < gridSize &&
                     ny >= 0 && ny < gridSize &&
                     nz >= 0 && nz < gridSize)
                 {
-                    if (cells[getIndex(nx, ny, nz, gridSize)] == CellState::Infected) {
+                    if (cells[getIndex(nx, ny, nz, gridSize)] == type ) {
                         count++;
                     }
                 }
@@ -175,19 +223,4 @@ int SimulationCore::countInfectedNeighbors(int x, int y, int z) const
         }
     }
     return count;
-}
-
-// zliczanie komórek w danym stanie
-std::tuple<int, int, int> SimulationCore::getCellCounts() const
-{
-    int healthy = 0;
-    int infected = 0;
-    int immune = 0;
-
-    for (const auto& state : cells) {
-        if (state == CellState::Healthy) healthy++;
-        else if (state == CellState::Infected) infected++;
-        else if (state == CellState::Immune) immune++;
-    }
-    return std::make_tuple(healthy, infected, immune);
 }

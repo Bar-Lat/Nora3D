@@ -100,9 +100,9 @@ void BoardCanvas::setScaleFactor(int factor) {
 }
 
 void BoardCanvas::setSpacing(float spacing) {
-    m_spacing = spacing/10.0f;
-    instanceBufferDirty = true; 
-    prepareInstanceDataAsync(); 
+    m_spacing = spacing / 10.0f;
+    instanceBufferDirty = true;
+    prepareInstanceDataAsync();
 }
 
 // ====================================================================
@@ -137,7 +137,6 @@ void BoardCanvas::prepareInstanceDataAsync() {
     Grid3D gridCopy = grid;
     int size = gridSize;
     float spacing = m_spacing;
-    
 
     prepareFuture = QtConcurrent::run([gridCopy, size, spacing]() -> std::vector<InstanceData> {
         std::vector<InstanceData> data;
@@ -147,6 +146,11 @@ void BoardCanvas::prepareInstanceDataAsync() {
             for (int y = 0; y < size; ++y) {
                 for (int x = 0; x < size; ++x) {
                     CellState state = gridCopy[getIndex(x, y, z, size)];
+
+                    // FILTRACJA: Jeśli stan to Dead, nie dodajemy do wektora
+                    if (state == CellState::Dead) {
+                        continue;
+                    }
 
                     InstanceData inst;
                     inst.offset = QVector3D(x * spacing, y * spacing, z * spacing);
@@ -166,7 +170,6 @@ void BoardCanvas::prepareInstanceDataAsync() {
                 }
             }
         }
-
         return data;
         });
 
@@ -176,14 +179,15 @@ void BoardCanvas::prepareInstanceDataAsync() {
 void BoardCanvas::updateInstanceBuffer() {
     if (!prepareFuture.isFinished()) return;
 
-    instanceData = prepareFuture.result();
+    instanceData = prepareFuture.result(); // To już jest wektor bez "martwych"
     isPreparingData = false;
     instanceBufferDirty = false;
 
     makeCurrent();
 
-    if (vboInstanced.isCreated() && !instanceData.empty()) {
+    if (vboInstanced.isCreated()) {
         vboInstanced.bind();
+        // Teraz instanceData zawiera tylko żywe komórki
         vboInstanced.allocate(instanceData.data(),
             static_cast<int>(instanceData.size() * sizeof(InstanceData)));
         vboInstanced.release();
@@ -277,6 +281,9 @@ void BoardCanvas::mousePressEvent(QMouseEvent* event) {
         for (int x = 0; x < gridSize; ++x) {
             for (int y = 0; y < gridSize; ++y) {
                 for (int z = 0; z < gridSize; ++z) {
+                    if (grid[getIndex(x, y, z, gridSize)] == CellState::Dead) {
+                        continue;
+                    }
                     QVector3D center(x * m_spacing, y * m_spacing, z * m_spacing);
                     QVector3D bMin = center - QVector3D(r, r, r);
                     QVector3D bMax = center + QVector3D(r, r, r);

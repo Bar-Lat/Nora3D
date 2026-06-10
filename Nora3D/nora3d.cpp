@@ -20,7 +20,7 @@ nora3d::nora3d(QWidget* parent)
     ui->boardSize->setRange(5, 800);
     ui->boardSize->setValue(20);
 
-    ui->gameTime->setRange(1, 40);
+    ui->gameTime->setRange(1, 1000);
     ui->gameTime->setValue(2);
 
     ui->timeInfection->setRange(1, 20);
@@ -34,6 +34,18 @@ nora3d::nora3d(QWidget* parent)
 
     ui->spacingSlider->setRange(10, 100);
     ui->spacingSlider->setValue(10);
+
+    ui->deathSlider->setRange(1, 100);
+    ui->deathSlider->setValue(10);
+
+    ui->deathSliderMax->setRange(1, 100);
+    ui->deathSliderMax->setValue(5);
+
+    ui->deathSliderMin->setRange(1, 100);
+    ui->deathSliderMin->setValue(10);
+
+    ui->filterSlider->setRange(1, 125);
+    ui->deathSliderMin->setValue(50);
 
 
     // polaczenia sygnal slot
@@ -49,13 +61,22 @@ nora3d::nora3d(QWidget* parent)
 
     connect(timer, &QTimer::timeout, this, &nora3d::onTick);
     connect(boardCanvas, &BoardCanvas::cellClicked, this, &nora3d::handleCellClick);
-
+    connect(ui->deathSliderMin, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
+    connect(ui->deathSliderMax, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
+    connect(ui->deathSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->spacingSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
     connect(ui->spacingSlider, &QSlider::valueChanged,
         [this](int value)
         {
             boardCanvas->setSpacing(value);
         });
+
+    connect(ui->deadRandom, &QCheckBox::toggled, this, &nora3d::onRandomDeathToggled);
+    connect(ui->filterCheckbox, &QCheckBox::toggled, [this](bool checked) {
+        ui->filterSlider->setEnabled(checked);
+        simulation->setFilteringEnabled(checked);
+        });
+    connect(ui->filterSlider, &QSlider::valueChanged, this, &nora3d::updateSliderLabels);
 
 	// etykiety suwaków
     double cps = (double)ui->gameTime->value();
@@ -66,6 +87,17 @@ nora3d::nora3d(QWidget* parent)
     ui->InfectionSeconds->setText(QString::number(ui->timeInfection->value()) + " cykli");
     ui->immuneSeconds->setText(QString::number(ui->timeImmune->value()) + " cykli");
     ui->infectionProbability->setText(QString::number(ui->chanceInfection->value()) + " %");
+    ui->deathLabel->setText(QString::number(ui->deathSlider->value()));
+    ui->filterLabel->setText(QString::number(ui->filterSlider->value()));
+
+
+
+    ui->deathSliderMin->setVisible(0);
+    ui->deathSliderMax->setVisible(0);
+    ui->deathMinLabel->setVisible(0);
+    ui->deathMaxLabel->setVisible(0);
+    ui->filterSlider->setEnabled(0);
+
 
     onResetClicked();
 }
@@ -80,13 +112,38 @@ nora3d::~nora3d()
 // STEROWANIE I PARAMETRY
 // ====================================================================
 
-void nora3d::applySettings()
-{
-	// przekazanie wartości do modelu symulacji 
+void nora3d::onRandomDeathToggled(bool checked) {
+    // Ukrywamy/pokazujemy odpowiednie kontrolki
+    ui->deathSlider->setVisible(!checked);
+    ui->deathLabel->setVisible(!checked);
+
+    ui->deathSliderMin->setVisible(checked);
+    ui->deathSliderMax->setVisible(checked);
+    ui->deathMinLabel->setVisible(checked); 
+    ui->deathMaxLabel->setVisible(checked);
+
+    applySettings();
+}
+
+void nora3d::applySettings() {
+    int minVal, maxVal;
+
+    if (ui->deadRandom->isChecked()) {
+        minVal = ui->deathSliderMin->value();
+        maxVal = ui->deathSliderMax->value();
+    }
+    else {
+        minVal = ui->deathSlider->value();
+        maxVal = ui->deathSlider->value();
+    }
+
     simulation->setParams(
         ui->timeInfection->value(),
         ui->timeImmune->value(),
-        ui->chanceInfection->value()
+        ui->chanceInfection->value(),
+        minVal,
+        maxVal,
+        ui->filterSlider->value()
     );
 }
 
@@ -132,8 +189,8 @@ void nora3d::onTick()
     simulation->step();
 
 	// bieżacy stan komórek
-    int healthyCount, infectedCount, immuneCount;
-    std::tie(healthyCount, infectedCount, immuneCount) = simulation->getCellCounts();
+    int healthyCount, infectedCount, immuneCount, deadCount;
+    std::tie(healthyCount, infectedCount, immuneCount, deadCount) = simulation->getCellCounts();
 
 	// koniec gdy nie ma zarażonych ani odpornych
     if (infectedCount == 0 && immuneCount == 0) {
@@ -174,11 +231,12 @@ void nora3d::updateUI()
     ui->label_time->setText(QString("Czas: %1 s").arg(timeSeconds, 0, 'f', 2));
 
     // update danych komórek
-    int healthyCount, infectedCount, immuneCount;
-    std::tie(healthyCount, infectedCount, immuneCount) = simulation->getCellCounts();
+    int healthyCount, infectedCount, immuneCount, deadCount;
+    std::tie(healthyCount, infectedCount, immuneCount, deadCount) = simulation->getCellCounts();
     ui->HealthyCellsLabel->setText(QString("%1").arg(healthyCount));
     ui->InfectedCellsLabel->setText(QString("%1").arg(infectedCount));
     ui->ImmuneCellsLabel->setText(QString("%1").arg(immuneCount));
+    ui->deadCellsLabel->setText(QString("%1").arg(deadCount));
 
     // odświeżenie planszy
     boardCanvas->setGrid(simulation->grid());
@@ -194,12 +252,16 @@ void nora3d::updateSliderLabels(int value)
         ui->cyclesPerSecond->setText(QString::number(CPS, 'f', 1) + " cykli/s");
         int interval = (value > 0) ? (1000 / value) : 1000;
         timer->setInterval(interval);
-        updateUI(); // Tutaj aktualizacja UI jest wskazana
+        updateUI(); 
     }
     else {
         if (senderSlider == ui->timeImmune) { ui->immuneSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->timeInfection) { ui->InfectionSeconds->setText(QString::number(value) + " cykli"); }
         else if (senderSlider == ui->chanceInfection) { ui->infectionProbability->setText(QString::number(value) + " %"); }
+        else if (senderSlider == ui->deathSlider) { ui->deathLabel->setText(QString::number(value)); }
+        else if (senderSlider == ui->deathSliderMin) { ui->deathMinLabel->setText("Od: " + QString::number(value)); }
+        else if (senderSlider == ui->deathSliderMax) { ui->deathMaxLabel->setText("Do: " + QString::number(value)); }
+        else if (senderSlider == ui->filterSlider) { ui->filterLabel->setText( QString::number(value)); }
         else if (senderSlider == ui->spacingSlider) {
             ui->spacingLabel->setText(QString::number(value/10.0f));
             boardCanvas->update(); 
