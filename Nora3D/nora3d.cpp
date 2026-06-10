@@ -1,4 +1,5 @@
 #include "nora3d.h"
+#include "AnalyticsWindow.h"
 
 // ====================================================================
 // KONSTRUKTOR I DESTRUKTOR
@@ -11,6 +12,9 @@ nora3d::nora3d(QWidget* parent)
     , timer(new QTimer(this))                       // inicjalizacja Timera
 {
     ui->setupUi(this);
+    if (!dbManager.init()) {
+        QMessageBox::warning(this, "Błąd Bazy Danych", "Nie udało się zainicjalizować bazy danych SQLite.");
+    }
 
     // Konfiguracja Widoku Planszy
     boardCanvas = new BoardCanvas(this);
@@ -56,6 +60,7 @@ nora3d::nora3d(QWidget* parent)
         {
             boardCanvas->setSpacing(value);
         });
+    connect(ui->showAnalyticsButton, &QPushButton::clicked, this, &nora3d::onShowAnalyticsClicked);
 
 	// etykiety suwaków
     double cps = (double)ui->gameTime->value();
@@ -99,6 +104,20 @@ void nora3d::onStartStopClicked()
     }
     else {
         applySettings();
+
+        // --- ROZPOCZĘCIE NOWEJ SYMULACJI W BAZIE ---
+        // Rejestrujemy symulację w bazie tylko, jeśli startujemy od zera (cykl 0)
+        if (simulation->time() == 0) {
+            currentSimulationId = dbManager.startSimulation(
+                simulation->size(),
+                simulation->getInfectionDuration(),
+                simulation->getImmunityDuration(),
+                simulation->getInfectionChance()
+            );
+            timeToPeak = 0;
+            currentPeakInfected = 0;
+        }
+
         timer->start();
         ui->startStopButton->setText("Pauza");
     }
@@ -106,12 +125,17 @@ void nora3d::onStartStopClicked()
 
 void nora3d::onResetClicked()
 {
-	// Stop i reset parametrow symulacji 
+    // Stop i reset parametrow symulacji 
     timer->stop();
     ui->startStopButton->setText("Start");
 
     applySettings();
     simulation->reset(ui->boardSize->value());
+
+    // --- RESET ZMIENNYCH ANALITYCZNYCH ---
+    currentSimulationId = -1;
+    timeToPeak = 0;
+    currentPeakInfected = 0;
 
     updateUI();
 }
@@ -131,21 +155,40 @@ void nora3d::onTick()
     // krok 
     simulation->step();
 
-	// bieżacy stan komórek
+    // bieżacy stan komórek
     int healthyCount, infectedCount, immuneCount;
     std::tie(healthyCount, infectedCount, immuneCount) = simulation->getCellCounts();
 
-	// koniec gdy nie ma zarażonych ani odpornych
+    // --- LOGOWANIE CYKLU I ANALITYKA ---
+    if (currentSimulationId != -1) {
+        dbManager.logCycle(currentSimulationId, simulation->time(), healthyCount, infectedCount, immuneCount);
+
+        // Aktualizacja szczytu epidemii
+        if (infectedCount > currentPeakInfected) {
+            currentPeakInfected = infectedCount;
+            timeToPeak = simulation->time();
+        }
+    }
+
+    // koniec gdy nie ma zarażonych ani odpornych
     if (infectedCount == 0 && immuneCount == 0) {
         if (timer->isActive()) {
-			// Zbieranie danych końcowych
+            // Zbieranie danych końcowych
             int timeCycles = simulation->time();
-            double timeSeconds = (timeCycles * timer->interval()) / 1000.0;
             int maxInfected = simulation->getMaxInfectedCount();
             int size = simulation->size();
-            int infDuration = simulation->getInfectionDuration();
-            int immDuration = simulation->getImmunityDuration();
-            int infChance = simulation->getInfectionChance();
+
+            // Obliczenie całkowitej liczby przypadków: początkowa populacja - końcowi zdrowi
+            int totalPopulation = size * size * size;
+            int totalCases = totalPopulation - healthyCount;
+
+            // Odporność stadna osiągnięta, jeśli na końcu zostali jacyś zdrowi obywatele
+            bool herdImmunityReached = (healthyCount > 0);
+
+            // --- ZAPIS KOŃCOWY DO BAZY ---
+            if (currentSimulationId != -1) {
+                dbManager.finishSimulation(currentSimulationId, timeCycles, maxInfected, timeToPeak, totalCases, herdImmunityReached);
+            }
 
             // koniec i odświeżenie
             onStartStopClicked();
@@ -224,4 +267,9 @@ void nora3d::handleCellClick(int x, int y, int z)
             simulation->setCellState(x, y, z, CellState::Healthy);
         }
         updateUI();
-    }
+    
+}
+void nora3d::onShowAnalyticsClicked() {
+    AnalyticsWindow analyticsDialog(this);
+    analyticsDialog.exec();
+}
