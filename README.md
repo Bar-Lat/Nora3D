@@ -26,15 +26,6 @@ Nora3D to aplikacja symulująca automat komórkowy w przestrzeni trójwymiarowej
 * Przechowywanie historii i parametrów
 * Możliwość filtrowania i analizy danych
 
-### Analiza danych
-
-* Obliczanie statystyk w czasie rzeczywistym:
-
-  * średnia liczba zarażeń
-  * maksymalna liczba zarażeń
-  * mediana czasu trwania
-  * odchylenie standardowe
-
 ### Wizualizacja
 
 * Dynamiczne wykresy w interfejsie Qt
